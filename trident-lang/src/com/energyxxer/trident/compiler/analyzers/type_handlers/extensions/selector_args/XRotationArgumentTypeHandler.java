@@ -51,7 +51,7 @@ public class XRotationArgumentTypeHandler implements TypeHandler<PitchArgument> 
 
     @Override
     public Object cast(PitchArgument object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

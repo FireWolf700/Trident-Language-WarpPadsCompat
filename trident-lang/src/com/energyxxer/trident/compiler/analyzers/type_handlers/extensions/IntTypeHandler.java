@@ -46,7 +46,7 @@ public class IntTypeHandler implements TypeHandler<Integer> {
             case "primitive(tag_double)": return new TagDouble(object);
             case "primitive(tag_long)": return new TagLong(object);
         }
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

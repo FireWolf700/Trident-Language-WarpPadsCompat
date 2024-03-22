@@ -110,7 +110,7 @@ public class EntityTypeHandler implements TypeHandler<Entity> {
 
     @Override
     public Object cast(Entity object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

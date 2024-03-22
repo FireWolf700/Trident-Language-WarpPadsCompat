@@ -56,7 +56,7 @@ public class TagListTypeHandler implements TypeHandler<TagList> {
 
     @Override
     public Object cast(TagList object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

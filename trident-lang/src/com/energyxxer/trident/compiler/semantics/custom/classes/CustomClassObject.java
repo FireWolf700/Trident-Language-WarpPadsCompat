@@ -114,7 +114,7 @@ public class CustomClassObject implements TypeHandler<CustomClassObject>, Parame
                 return castMethod.safeCall(new ActualParameterList(pattern), ctx, object);
             }
         }
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

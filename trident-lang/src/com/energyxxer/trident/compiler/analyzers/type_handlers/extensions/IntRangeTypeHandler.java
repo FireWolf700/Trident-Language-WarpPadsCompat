@@ -56,7 +56,7 @@ public class IntRangeTypeHandler implements TypeHandler<IntegerRange> {
 
     @Override
     public Object cast(IntegerRange range, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

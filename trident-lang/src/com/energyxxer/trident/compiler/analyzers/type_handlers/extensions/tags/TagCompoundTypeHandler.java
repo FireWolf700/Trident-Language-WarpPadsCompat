@@ -90,7 +90,7 @@ public class TagCompoundTypeHandler implements TypeHandler<TagCompound> {
 
     @Override
     public Object cast(TagCompound object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

@@ -55,7 +55,7 @@ public class TagIntTypeHandler implements TypeHandler<TagInt> {
             case "primitive(real)":
                 return object.getValue().doubleValue();
         }
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

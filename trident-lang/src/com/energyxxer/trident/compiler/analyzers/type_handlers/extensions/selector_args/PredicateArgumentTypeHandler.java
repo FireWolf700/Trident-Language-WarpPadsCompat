@@ -54,7 +54,7 @@ public class PredicateArgumentTypeHandler implements TypeHandler<PredicateArgume
 
     @Override
     public Object cast(PredicateArgument object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

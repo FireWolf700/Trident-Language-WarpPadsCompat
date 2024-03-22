@@ -51,7 +51,7 @@ public class DistanceArgumentTypeHandler implements TypeHandler<DistanceArgument
 
     @Override
     public Object cast(DistanceArgument object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

@@ -105,7 +105,7 @@ public class StringTypeHandler implements TypeHandler<String> {
             case "primitive(text_component)":
                 return new StringTextComponent(object);
         }
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

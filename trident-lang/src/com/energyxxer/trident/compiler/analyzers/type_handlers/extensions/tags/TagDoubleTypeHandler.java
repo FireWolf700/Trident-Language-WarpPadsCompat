@@ -55,7 +55,7 @@ public class TagDoubleTypeHandler implements TypeHandler<TagDouble> {
             case "primitive(real)":
                 return object.getValue();
         }
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

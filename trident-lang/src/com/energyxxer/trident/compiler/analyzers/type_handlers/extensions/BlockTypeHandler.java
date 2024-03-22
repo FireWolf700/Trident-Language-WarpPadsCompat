@@ -80,7 +80,7 @@ public class BlockTypeHandler implements TypeHandler<Block> {
 
     @Override
     public Object cast(Block object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

@@ -51,7 +51,7 @@ public class YRotationArgumentTypeHandler implements TypeHandler<YawArgument> {
 
     @Override
     public Object cast(YawArgument object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

@@ -41,7 +41,7 @@ public class SelectorArgumentTypeHandler implements TypeHandler<SelectorArgument
 
     @Override
     public Object cast(SelectorArgument object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

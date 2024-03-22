@@ -50,7 +50,7 @@ public class LimitArgumentTypeHandler implements TypeHandler<LimitArgument> {
 
     @Override
     public Object cast(LimitArgument object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

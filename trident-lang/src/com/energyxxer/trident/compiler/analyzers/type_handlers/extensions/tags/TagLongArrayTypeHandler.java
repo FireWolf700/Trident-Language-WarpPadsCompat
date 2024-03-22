@@ -41,7 +41,7 @@ public class TagLongArrayTypeHandler implements TypeHandler<TagLongArray> {
         if ("primitive(list)".equals(typeSystem.getInternalTypeIdentifierForType(targetType))) {
             return new ListObject(typeSystem, object.getAllTags());
         }
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

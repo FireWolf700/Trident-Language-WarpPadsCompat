@@ -53,7 +53,7 @@ public class TypeHandlerTypeHandler implements TypeHandler<TypeHandler> {
 
     @Override
     public Object cast(TypeHandler object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

@@ -72,7 +72,7 @@ public class NBTPathTypeHandler implements TypeHandler<NBTPath> {
 
     @Override
     public Object cast(NBTPath object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

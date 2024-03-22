@@ -52,7 +52,7 @@ public class NBTArgumentTypeHandler implements TypeHandler<NBTArgument> {
 
     @Override
     public Object cast(NBTArgument object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

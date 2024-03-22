@@ -43,7 +43,7 @@ public class TagByteArrayTypeHandler implements TypeHandler<TagByteArray> {
         if ("primitive(list)".equals(typeSystem.getInternalTypeIdentifierForType(targetType))) {
             return new ListObject(typeSystem, object.getAllTags());
         }
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

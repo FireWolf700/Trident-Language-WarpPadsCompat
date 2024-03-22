@@ -54,7 +54,7 @@ public class RawArgumentTypeHandler implements TypeHandler<RawArgumentTypeHandle
 
     @Override
     public Object cast(RawArgumentTypeHandler.RawSelectorArgument object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

@@ -30,7 +30,7 @@ public class BooleanTypeHandler implements TypeHandler<Boolean> {
 
     @Override
     public Object cast(Boolean object, TypeHandler targetType, TokenPattern<?> pattern, ISymbolContext ctx) {
-        return null;
+        throw new ClassCastException();
     }
 
     @Override

@@ -151,7 +151,7 @@ public abstract class LoopInstruction implements InstructionDefinition {
                             if (initializationVariableDecl != null) {
                                 new VariableInstruction().run(initializationVariableDecl, ctx);
                             } else {
-                                if(initialization != null) initialization.evaluate(ctx, null);
+                                initialization.evaluate(ctx, null);
                             }
                         }
 
@@ -165,7 +165,7 @@ public abstract class LoopInstruction implements InstructionDefinition {
 
                         @Override
                         public void iterate() {
-                            if(iteration != null) iteration.evaluate(ctx, null);
+                            iteration.evaluate(ctx, null);
                         }
                     };
                 }

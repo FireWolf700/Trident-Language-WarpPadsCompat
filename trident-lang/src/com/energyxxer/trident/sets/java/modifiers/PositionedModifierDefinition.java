@@ -2,7 +2,6 @@ package com.energyxxer.trident.sets.java.modifiers;
 
 import com.energyxxer.commodore.CommodoreException;
 import com.energyxxer.commodore.functionlogic.commands.execute.ExecuteModifier;
-import com.energyxxer.commodore.functionlogic.commands.execute.ExecutePositioned;
 import com.energyxxer.commodore.functionlogic.commands.execute.ExecutePositionedAsEntity;
 import com.energyxxer.commodore.functionlogic.coordinates.CoordinateSet;
 import com.energyxxer.commodore.functionlogic.entity.Entity;
@@ -42,11 +41,11 @@ public class PositionedModifierDefinition implements SimpleExecuteModifierDefini
                                 return null;
                             }
                         }),
-                        wrapper(productions.getOrCreateStructure("COORDINATE_SET"), (v, p, ctx, d) -> new ExecutePositioned((CoordinateSet) v)),
+                        productions.getOrCreateStructure("COORDINATE_SET"),
                         PrismarineTypeSystem.validatorGroup(productions.getOrCreateStructure("INTERPOLATION_BLOCK"),
                                 d -> null,
                                 (Object v, TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                        if (v instanceof CoordinateSet) return new ExecutePositioned((CoordinateSet) v);
+                                        if (v instanceof CoordinateSet) return (CoordinateSet) v;
                                         try {
                                             return new ExecutePositionedAsEntity((Entity) v);
                                         } catch (CommodoreException x) {

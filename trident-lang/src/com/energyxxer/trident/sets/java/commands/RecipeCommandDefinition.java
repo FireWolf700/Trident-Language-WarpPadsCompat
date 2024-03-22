@@ -30,17 +30,17 @@ public class RecipeCommandDefinition implements SimpleCommandDefinition {
                 enumChoice(RecipeCommand.Action.class).setName("ACTION"),
                 productions.getOrCreateStructure("ENTITY"),
                 choice(
-                        symbol("*").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> "*"),
-                        group(productions.getOrCreateStructure("RESOURCE_LOCATION")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> p.find("RESOURCE_LOCATION").evaluate(ctx, null).toString())
+                        symbol("*").setEvaluator((p, d) -> "*"),
+                        group(productions.getOrCreateStructure("RESOURCE_LOCATION")).setEvaluator((p, d) -> p.find("RESOURCE_LOCATION").evaluate((ISymbolContext) d[0]).toString())
                 ).addTags("cspn:Recipe").setName("RECIPE")
         );
     }
 
     @Override
     public Command parseSimple(TokenPattern<?> pattern, ISymbolContext ctx) {
-        RecipeCommand.Action action = (RecipeCommand.Action) pattern.find("ACTION").evaluate(ctx, null);
-        Entity entity = (Entity) pattern.find("ENTITY").evaluate(ctx, null);
-        String recipe = (String) pattern.find("RECIPE").evaluate(ctx, null);
+        RecipeCommand.Action action = (RecipeCommand.Action) pattern.find("ACTION").evaluate();
+        Entity entity = (Entity) pattern.find("ENTITY").evaluate(ctx);
+        String recipe = (String) pattern.find("RECIPE").evaluate(ctx);
         try {
             return new RecipeCommand(action, entity, recipe);
         } catch (CommodoreException x) {

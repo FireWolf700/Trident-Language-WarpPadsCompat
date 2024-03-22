@@ -139,14 +139,14 @@ public class TridentFile extends PrismarineLanguageUnit {
                         break;
                     }
                     case "LANGUAGE_LEVEL_DIRECTIVE": {
-                        int level = (int) directiveBody.find("INTEGER").evaluate(this, null);
+                        int level = (int) directiveBody.find("INTEGER").evaluate(this);
                         if(level < 1 || level > 3) {
                             getCompiler().getReport().addNotice(new Notice(NoticeType.ERROR, "Invalid language level: " + level, directiveBody.find("INTEGER")));
                         } else this.languageLevel = level;
                         break;
                     }
                     case "PRIORITY_DIRECTIVE": {
-                        this.priority = (float) (double) directiveBody.find("REAL").evaluate(this, null);
+                        this.priority = (float) (double) directiveBody.find("REAL").evaluate(this);
                         break;
                     }
                     case "BREAKING_DIRECTIVE": {
@@ -155,7 +155,7 @@ public class TridentFile extends PrismarineLanguageUnit {
                     }
                     case "METADATA_DIRECTIVE": {
                         if (this.metadata == null) {
-                            this.metadata = (DictionaryObject) directiveBody.find("DICTIONARY").evaluate(this, null);
+                            this.metadata = (DictionaryObject) directiveBody.find("DICTIONARY").evaluate(this);
                         } else {
                             getCompiler().getReport().addNotice(new Notice(NoticeType.ERROR, "Duplicate metadata directive", directiveList));
                         }
@@ -208,7 +208,7 @@ public class TridentFile extends PrismarineLanguageUnit {
         }
 
         if(namePattern != null) {
-            ResourceLocation suggestedLoc = (ResourceLocation) namePattern.evaluate(parent, null);
+            ResourceLocation suggestedLoc = (ResourceLocation) namePattern.evaluate(parent);
             suggestedLoc.assertStandalone(namePattern, parent);
             if(!suggestedLoc.namespace.equals("minecraft")) {
                 innerFilePathRaw = TridentFileUnitConfiguration.resourceLocationToFunctionPath(suggestedLoc).toString();
@@ -447,7 +447,7 @@ public class TridentFile extends PrismarineLanguageUnit {
                         appendTo.append(new FunctionComment(inner.flatten(false).substring(1)));
                     break;
                 default: {
-                    inner.evaluate(parent, new Object[] {appendTo});
+                    inner.evaluate(parent, appendTo);
                     break;
                 }
             }
@@ -556,7 +556,7 @@ public class TridentFile extends PrismarineLanguageUnit {
 
     public static void resolveEntry(TokenPattern<?> inner, ISymbolContext parent, FunctionSection appendTo, boolean compileOnly) {
         try {
-            inner.evaluate(parent, new Object[] {appendTo});
+            inner.evaluate(parent, appendTo);
         } catch(CommodoreException x) {
             if(x.getSource() == CommodoreException.Source.VERSION_ERROR) {
                 throw new PrismarineException(TridentExceptionUtil.Source.COMMAND_ERROR, x.getSource() + ": " + x.getMessage(), inner, parent);

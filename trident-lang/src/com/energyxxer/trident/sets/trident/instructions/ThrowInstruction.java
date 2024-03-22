@@ -20,7 +20,7 @@ public class ThrowInstruction implements InstructionDefinition {
 
     @Override
     public void run(TokenPattern<?> pattern, ISymbolContext ctx) {
-        Object exception = pattern.find("CAUSE").evaluate(ctx, null);
+        Object exception = pattern.find("CAUSE").evaluate(ctx);
         if(exception instanceof PrismarineException) {
             throw (PrismarineException) exception;
         } else {

@@ -55,13 +55,11 @@ public class TridentUserFunctionBranch extends PrismarineFunctionBranch {
             Symbol sym = new Symbol(param.getName(), TridentSymbolVisibility.PRIVATE);
             sym.setTypeConstraints(GenericUtils.nonGeneric(param.getConstraints(), thisObject, params, callingCtx));
 
-            TypedFunction.ActualParameterResponse actualValueResponse = TypedFunction.getActualParameterByFormalIndex(i, formalParameters, params, callingCtx, thisObject);
-            Object actualValue = actualValueResponse.value;
-            int actualIndex = actualValueResponse.index;
-            TokenPattern<?> actualValuePattern = (actualIndex >= 0 && actualIndex < params.size()) ? params.getPattern(actualIndex) : params.getPattern();
+            Object[] actualValue = TypedFunction.getActualParameterByFormalIndex(i, formalParameters, params, callingCtx, thisObject);
+            TokenPattern<?> actualValuePattern = (((int) actualValue[1]) >= 0 && ((int) actualValue[1]) < params.size()) ? params.getPattern(((int) actualValue[1])) : params.getPattern();
 
             sym.safeSetValue(
-                    actualValue,
+                    actualValue[0],
                     actualValuePattern,
                     callingCtx
             );

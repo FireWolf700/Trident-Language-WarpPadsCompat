@@ -32,9 +32,10 @@ public class FacingModifierDefinition implements SimpleExecuteModifierDefinition
                                 literal("entity").setOptional(),
                                 productions.getOrCreateStructure("ENTITY"),
                                 wrapperOptional(productions.getOrCreateStructure("ANCHOR")).setName("ANCHOR")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            Entity entity = (Entity) p.find("ENTITY").evaluate(ctx, null);
-                            EntityAnchor anchor = (EntityAnchor) p.findThenEvaluate("ANCHOR", EntityAnchor.FEET, ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            Entity entity = (Entity) p.find("ENTITY").evaluate(ctx);
+                            EntityAnchor anchor = (EntityAnchor) p.findThenEvaluate("ANCHOR", EntityAnchor.FEET, ctx);
                             try {
                                 return new ExecuteFacingEntity(entity, anchor);
                             } catch (CommodoreException x) {
@@ -44,7 +45,7 @@ public class FacingModifierDefinition implements SimpleExecuteModifierDefinition
                                 return null;
                             }
                         }),
-                        wrapper(productions.getOrCreateStructure("COORDINATE_SET"), (Object v, TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new ExecuteFacingBlock((CoordinateSet) v))
+                        wrapper(productions.getOrCreateStructure("COORDINATE_SET"), (v, p, d) -> new ExecuteFacingBlock((CoordinateSet) v))
                 ).setName("INNER")
         ).setSimplificationFunctionFind("INNER");
     }

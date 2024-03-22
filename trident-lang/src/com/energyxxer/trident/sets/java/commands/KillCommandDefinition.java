@@ -32,7 +32,7 @@ public class KillCommandDefinition implements SimpleCommandDefinition {
 
     @Override
     public Command parseSimple(TokenPattern<?> pattern, ISymbolContext ctx) {
-        Entity entity = (Entity) pattern.findThenEvaluateLazyDefault("ENTITY", () -> new Selector(SENDER), ctx, null);
+        Entity entity = (Entity) pattern.findThenEvaluateLazyDefault("ENTITY", () -> new Selector(SENDER), ctx);
         return new KillCommand(entity);
     }
 }

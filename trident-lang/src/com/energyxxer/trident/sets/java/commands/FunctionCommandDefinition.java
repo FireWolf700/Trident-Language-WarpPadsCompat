@@ -32,10 +32,14 @@ public class FunctionCommandDefinition implements SimpleCommandDefinition {
                         group(
                                 TridentProductions.resourceLocationFixer,
                                 wrapper(productions.getOrCreateStructure("RESOURCE_LOCATION_TAGGED")).setName("FUNCTION_REFERENCE").addTags(TridentSuggestionTags.RESOURCE, TridentSuggestionTags.FUNCTION)
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+
                             return new FunctionCommand(CommonParsers.parseFunctionTag((TokenStructure) p.find("FUNCTION_REFERENCE.RESOURCE_LOCATION_TAGGED"), ctx));
                         }),
-                        group(productions.getOrCreateStructure("OPTIONAL_NAME_INNER_FUNCTION")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                        group(productions.getOrCreateStructure("OPTIONAL_NAME_INNER_FUNCTION")).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+
                             TridentFile inner = TridentFile.createInnerFile(((TokenGroup) p).getContents()[0], ctx);
                             return new FunctionCommand(inner.getFunction());
                         })

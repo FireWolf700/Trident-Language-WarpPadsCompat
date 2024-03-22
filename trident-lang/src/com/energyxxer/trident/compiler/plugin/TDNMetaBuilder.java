@@ -100,9 +100,10 @@ public class TDNMetaBuilder extends PrismarineMetaBuilder {
             returnValue = new TokenGroupMatch().append(returnValue).addTags(PLUGIN_CREATED_TAG);
         }
 
-        returnValue.setEvaluator((TokenPattern<?> pattern, ISymbolContext ctx, Object[] data) -> {
+        returnValue.setEvaluator((pattern, data) -> {
+            ISymbolContext ctx = (ISymbolContext) data[0];
             TridentFile writingFile = ctx.get(SetupWritingStackTask.INSTANCE).getWritingFile();
-            new PluginCommandParser().handleCommand(unit, pattern, (List<ExecuteModifier>) data[0], ctx, writingFile.getFunction());
+            new PluginCommandParser().handleCommand(unit, pattern, (List<ExecuteModifier>) data[1], ctx, writingFile.getFunction());
             return Collections.emptyList();
         });
 

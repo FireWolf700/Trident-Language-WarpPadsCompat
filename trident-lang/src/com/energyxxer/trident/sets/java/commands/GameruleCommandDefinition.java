@@ -34,7 +34,7 @@ public class GameruleCommandDefinition implements SimpleCommandDefinition {
 
     @Override
     public Command parseSimple(TokenPattern<?> pattern, ISymbolContext ctx) {
-        Object inner = pattern.find("INNER").evaluate(ctx, null);
+        Object inner = pattern.find("INNER").evaluate(ctx);
         if (inner instanceof Type) {
             return new GameruleQueryCommand((Type) inner);
         } else {

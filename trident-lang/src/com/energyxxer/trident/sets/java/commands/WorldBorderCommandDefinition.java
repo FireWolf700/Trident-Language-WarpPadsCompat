@@ -26,22 +26,25 @@ public class WorldBorderCommandDefinition implements SimpleCommandDefinition {
         return group(
                 TridentProductions.commandHeader("worldborder"),
                 choice(
-                        literal("get").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new WorldBorderGetWidth()),
+                        literal("get").setEvaluator((p, d) -> new WorldBorderGetWidth()),
                         group(
                                 choice(
-                                        literal("add").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new WorldBorderAddDistance((double) d[0], (int) d[1])),
-                                        literal("set").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new WorldBorderSetDistance((double) d[0], (int) d[1]))
+                                        literal("add").setEvaluator((p, d) -> {
+                                            return new WorldBorderAddDistance((double) d[1], (int) d[2]);
+                                        }),
+                                        literal("set").setEvaluator((p, d) -> new WorldBorderSetDistance((double) d[1], (int) d[2]))
                                 ).setName("INNER"),
                                 TridentProductions.real(productions).setName("DISTANCE").addTags("cspn:Distance"),
                                 TridentProductions.integer(productions).setOptional().setName("TIME").addTags("cspn:Transition time")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            double distance = (double) p.find("DISTANCE").evaluate(ctx, null);
-                            int time = (int) p.findThenEvaluate("TIME", 0, ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            double distance = (double) p.find("DISTANCE").evaluate(ctx);
+                            int time = (int) p.findThenEvaluate("TIME", 0, ctx);
 
                             try {
-                                return p.find("INNER").evaluate(ctx, new Object[] {distance, time});
+                                return p.find("INNER").evaluate(ctx, distance, time);
                             } catch (CommodoreException x) {
-                                TridentExceptionUtil.handleCommodoreException(x, p, ctx)
+                                TridentExceptionUtil.handleCommodoreException(x, p, (ISymbolContext) d[0])
                                         .map("DISTANCE", p.tryFind("DISTANCE"))
                                         .map("TIME", p.tryFind("TIME"))
                                         .invokeThrow();
@@ -52,7 +55,7 @@ public class WorldBorderCommandDefinition implements SimpleCommandDefinition {
                                 literal("center"),
                                 wrapper(
                                         productions.getOrCreateStructure("TWO_COORDINATE_SET"),
-                                        (Object v, TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new WorldBorderSetCenter((CoordinateSet) v)
+                                        (v, p, d) -> new WorldBorderSetCenter((CoordinateSet) v)
                                 )
                         ).setSimplificationFunctionContentIndex(1),
                         group(
@@ -61,11 +64,11 @@ public class WorldBorderCommandDefinition implements SimpleCommandDefinition {
                                         group(
                                                 literal("amount"),
                                                 TridentProductions.real(productions).setName("DAMAGE").addTags("cspn:Damage Per Block Per Second")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new WorldBorderSetDamageAmount((double) p.find("DAMAGE").evaluate(ctx, null))),
+                                        ).setEvaluator((p, d) -> new WorldBorderSetDamageAmount((double) p.find("DAMAGE").evaluate((ISymbolContext) d[0]))),
                                         group(
                                                 literal("buffer"),
                                                 TridentProductions.real(productions).setName("DISTANCE").addTags("cspn:Distance")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new WorldBorderSetDamageBuffer((double) p.find("DISTANCE").evaluate(ctx, null)))
+                                        ).setEvaluator((p, d) -> new WorldBorderSetDamageBuffer((double) p.find("DISTANCE").evaluate((ISymbolContext) d[0])))
                                 )
                         ).setSimplificationFunctionContentIndex(1),
                         group(
@@ -74,11 +77,11 @@ public class WorldBorderCommandDefinition implements SimpleCommandDefinition {
                                         group(
                                                 literal("distance"),
                                                 TridentProductions.integer(productions).setName("DISTANCE").addTags("cspn:Distance")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new WorldBorderSetWarningDistance((int) p.find("DISTANCE").evaluate(ctx, null))),
+                                        ).setEvaluator((p, d) -> new WorldBorderSetWarningDistance((int) p.find("DISTANCE").evaluate((ISymbolContext) d[0]))),
                                         group(
                                                 literal("time"),
                                                 TridentProductions.integer(productions).setName("TIME").addTags("cspn:Time")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new WorldBorderSetWarningTime((int) p.find("TIME").evaluate(ctx, null)))
+                                        ).setEvaluator((p, d) -> new WorldBorderSetWarningTime((int) p.find("TIME").evaluate((ISymbolContext) d[0])))
                                 )
                         ).setSimplificationFunctionContentIndex(1)
                 ).setName("INNER")

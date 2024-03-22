@@ -127,7 +127,7 @@ public class PluginCommandParser {
                 return function;
             }
             case "MODIFIER": {
-                Object returnedModifiers = pattern.evaluate(ctx, null);
+                Object returnedModifiers = pattern.evaluate(ctx);
                 StringBuilder sb = new StringBuilder();
 
                 if(returnedModifiers instanceof ExecuteModifier) {
@@ -172,15 +172,15 @@ public class PluginCommandParser {
             case "INTERPOLATION_VALUE":
             case "COORDINATE_SET":
             case "TWO_COORDINATE_SET":
-                return pattern.evaluate(ctx, null);
+                return pattern.evaluate(ctx);
             case "ITEM":
             case "ITEM_TAGGED": {
                 NBTMode mode = NBTMode.SETTING;
                 if(parentPattern.hasTag(STORE_METADATA_TAG_PREFIX + "TESTING")) mode = NBTMode.TESTING;
-                return pattern.evaluate(ctx, new Object[] {mode});
+                return pattern.evaluate(ctx, mode);
             }
             case "NEW_ENTITY_LITERAL": {
-                TridentLiteralSet.SummonData summonData = (TridentLiteralSet.SummonData) pattern.evaluate(ctx, null);
+                TridentLiteralSet.SummonData summonData = (TridentLiteralSet.SummonData) pattern.evaluate(ctx);
                 DictionaryObject newEntityDict = new DictionaryObject(ctx.getTypeSystem());
                 newEntityDict.put("type", new ResourceLocation(summonData.type.toString()));
                 newEntityDict.put("components", new ListObject(ctx.getTypeSystem(), summonData.components));
@@ -195,12 +195,12 @@ public class PluginCommandParser {
             case "DIMENSION_ID":
             case "BIOME_ID":
             case "ATTRIBUTE_ID":
-                return new ResourceLocation((Type) pattern.evaluate(ctx, null));
+                return new ResourceLocation((Type) pattern.evaluate(ctx));
             case "TRIDENT_ENTITY_ID_NBT":
             case "TRIDENT_ENTITY_ID_TAGGED":
             case "ENTITY_ID":
             case "ENTITY_ID_TAGGED": {
-                Object ref = pattern.evaluate(ctx, null);
+                Object ref = pattern.evaluate(ctx);
                 if(ref instanceof Type) ref = new ResourceLocation((Type) ref);
                 return ref;
             }
@@ -211,11 +211,11 @@ public class PluginCommandParser {
             case "GAMERULE_ID":
             case "STRUCTURE":
             case "STRUCTURE_ID":
-            case "DIFFICULTY": return ((Type) pattern.evaluate(ctx, null)).toString();
-            case "OBJECTIVE_NAME": return pattern.evaluate(ctx, new Object[] {String.class});
+            case "DIFFICULTY": return ((Type) pattern.evaluate(ctx)).toString();
+            case "OBJECTIVE_NAME": return pattern.evaluate(ctx, String.class);
             case "SCORE":
             case "SCORE_OPTIONAL_OBJECTIVE": {
-                LocalScore score = (LocalScore) pattern.evaluate(ctx, null);
+                LocalScore score = (LocalScore) pattern.evaluate(ctx);
                 String objectiveName = null;
                 if(score.getObjective() != null) objectiveName = score.getObjective().getName();
                 return new PointerObject(ctx.getTypeSystem(), score.getHolder(), objectiveName);

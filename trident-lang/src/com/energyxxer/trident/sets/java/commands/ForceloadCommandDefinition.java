@@ -31,9 +31,10 @@ public class ForceloadCommandDefinition implements SimpleCommandDefinition {
                                 literal("add"),
                                 wrapper(productions.getOrCreateStructure("TWO_COORDINATE_SET")).setName("CHUNK_FROM").addTags("cspn:From"),
                                 wrapperOptional(productions.getOrCreateStructure("TWO_COORDINATE_SET")).setName("CHUNK_TO").addTags("cspn:To")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            CoordinateSet from = (CoordinateSet) p.find("CHUNK_FROM").evaluate(ctx, null);
-                            CoordinateSet to = (CoordinateSet) p.findThenEvaluate("CHUNK_TO", null, ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            CoordinateSet from = (CoordinateSet) p.find("CHUNK_FROM").evaluate(ctx);
+                            CoordinateSet to = (CoordinateSet) p.findThenEvaluate("CHUNK_TO", null, ctx);
                             return new ForceLoadAddCommand(from, to);
                         }),
                         group(
@@ -41,8 +42,9 @@ public class ForceloadCommandDefinition implements SimpleCommandDefinition {
                                 wrapperOptional(
                                         productions.getOrCreateStructure("TWO_COORDINATE_SET")
                                 ).setName("FORCELOAD_QUERY_COLUMN")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            CoordinateSet queryColumn = (CoordinateSet) p.findThenEvaluate("FORCELOAD_QUERY_COLUMN", null, ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            CoordinateSet queryColumn = (CoordinateSet) p.findThenEvaluate("FORCELOAD_QUERY_COLUMN", null, ctx);
                             return new ForceLoadQueryCommand(queryColumn);
                         }),
                         group(
@@ -51,12 +53,13 @@ public class ForceloadCommandDefinition implements SimpleCommandDefinition {
                                         group(
                                                 wrapper(productions.getOrCreateStructure("TWO_COORDINATE_SET")).setName("CHUNK_FROM").addTags("cspn:XZ Position 1"),
                                                 wrapperOptional(productions.getOrCreateStructure("TWO_COORDINATE_SET")).setName("CHUNK_TO").addTags("cspn:XZ Position 2")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            CoordinateSet from = (CoordinateSet) p.find("CHUNK_FROM").evaluate(ctx, null);
-                                            CoordinateSet to = (CoordinateSet) p.findThenEvaluate("CHUNK_TO", null, ctx, null);
+                                        ).setEvaluator((p, d) -> {
+                                            ISymbolContext ctx = (ISymbolContext) d[0];
+                                            CoordinateSet from = (CoordinateSet) p.find("CHUNK_FROM").evaluate(ctx);
+                                            CoordinateSet to = (CoordinateSet) p.findThenEvaluate("CHUNK_TO", null, ctx);
                                             return new ForceLoadRemoveCommand(from, to);
                                         }),
-                                        group(literal("all")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new ForceLoadRemoveAllCommand())
+                                        group(literal("all")).setEvaluator((p, d) -> new ForceLoadRemoveAllCommand())
                                 )
                         ).setSimplificationFunctionContentIndex(1)
                 ).setName("INNER")

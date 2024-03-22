@@ -34,31 +34,34 @@ public class TagCommandDefinition implements CommandDefinition {
                 TridentProductions.commandHeader("tag"),
                 productions.getOrCreateStructure("ENTITY"),
                 choice(
-                        literal("list").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            Entity entity = (Entity) d[0];
+                        literal("list").setEvaluator((p, d) -> {
+                            Entity entity = (Entity) d[1];
                             return Collections.singletonList(new TagQueryCommand(entity));
                         }),
                         group(literal("add"), TridentProductions.noToken().addTags("cspn:Tag"), wrapper(TridentProductions.identifierA(productions)).setName("TAG"))
-                                .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                    Entity entity = (Entity) d[0];
+                                .setEvaluator((p, d) -> {
+                                    ISymbolContext ctx = (ISymbolContext) d[0];
+                                    Entity entity = (Entity) d[1];
 
-                                    String tag = (String) p.find("TAG").evaluate(ctx, null);
+                                    String tag = (String) p.find("TAG").evaluate(ctx);
                                     return Collections.singletonList(new TagCommand(TagCommand.Action.ADD, entity, tag));
                                 }),
                         group(literal("remove"), TridentProductions.noToken().addTags("cspn:Tag"), wrapper(TridentProductions.identifierA(productions)).setName("TAG"))
-                                .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                    Entity entity = (Entity) d[0];
+                                .setEvaluator((p, d) -> {
+                                    ISymbolContext ctx = (ISymbolContext) d[0];
+                                    Entity entity = (Entity) d[1];
 
-                                    String tag = (String) p.find("TAG").evaluate(ctx, null);
+                                    String tag = (String) p.find("TAG").evaluate(ctx);
                                     return Collections.singletonList(new TagCommand(TagCommand.Action.REMOVE, entity, tag));
                                 }),
                         group(matchItem(CUSTOM_COMMAND_KEYWORD, "update"), TridentProductions.noToken().addTags("cspn:Tag"), wrapper(TridentProductions.identifierA(productions)).setName("TAG"))
-                                .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                    Entity entity = (Entity) d[0];
+                                .setEvaluator((p, d) -> {
+                                    ISymbolContext ctx = (ISymbolContext) d[0];
+                                    Entity entity = (Entity) d[1];
 
                                     TridentUtil.assertLanguageLevel(ctx, 2, "The tag-update subcommand is", p);
 
-                                    String tag = (String) p.find("TAG").evaluate(ctx, null);
+                                    String tag = (String) p.find("TAG").evaluate(ctx);
 
                                     ArrayList<Command> commands = new ArrayList<>();
                                     Entity removeFrom = entity instanceof Selector ? new Selector(((Selector) entity).getBase()) : new Selector(Selector.BaseSelector.ALL_PLAYERS);
@@ -68,13 +71,10 @@ public class TagCommandDefinition implements CommandDefinition {
                                 })
                 ).setName("INNER")
         ).setSimplificationFunction(d -> {
-            TokenPattern<?> pattern = d.pattern;
-            ISymbolContext ctx = (ISymbolContext) d.ctx;
-
-            d.unlock(); d = null;
-            Entity entity = (Entity) pattern.find("ENTITY").evaluate(ctx, null);
-
-            TokenPattern.SimplificationDomain.get(pattern.find("INNER"), ctx, new Object[] {entity});
+            ISymbolContext ctx = (ISymbolContext) d.data[0];
+            Entity entity = (Entity) d.pattern.find("ENTITY").evaluate(ctx);
+            d.pattern = d.pattern.find("INNER");
+            d.data = new Object[] {ctx, entity};
         });
     }
 

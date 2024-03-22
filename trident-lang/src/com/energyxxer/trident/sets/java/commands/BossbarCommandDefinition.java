@@ -37,7 +37,7 @@ public class BossbarCommandDefinition implements SimpleCommandDefinition {
         return PrismarineProductions.group(
                 TridentProductions.commandHeader("bossbar"),
                 choice(
-                        literal("list").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarListCommand()),
+                        literal("list").setEvaluator((p, d) -> new BossbarListCommand()),
                         group(
                                 literal("add"),
                                 TridentProductions.noToken().addTags("cspn:Bossbar"),
@@ -49,10 +49,10 @@ public class BossbarCommandDefinition implements SimpleCommandDefinition {
                                 TridentProductions.noToken().addTags("cspn:Bossbar"),
                                 productions.getOrCreateStructure("RESOURCE_LOCATION"),
                                 choice(
-                                        literal("max").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarGetMaxCommand((BossbarReference) d[0])),
-                                        literal("players").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarGetValueCommand((BossbarReference) d[0])),
-                                        literal("value").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarGetPlayersCommand((BossbarReference) d[0])),
-                                        literal("visible").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarGetVisibleCommand((BossbarReference) d[0]))
+                                        literal("max").setEvaluator((p, d) -> new BossbarGetMaxCommand((BossbarReference) d[0])),
+                                        literal("players").setEvaluator((p, d) -> new BossbarGetValueCommand((BossbarReference) d[0])),
+                                        literal("value").setEvaluator((p, d) -> new BossbarGetPlayersCommand((BossbarReference) d[0])),
+                                        literal("visible").setEvaluator((p, d) -> new BossbarGetVisibleCommand((BossbarReference) d[0]))
                                 ).setName("WHAT_TO_GET")
                         ).setEvaluator(BossbarCommandDefinition::parseGet),
                         group(
@@ -68,31 +68,31 @@ public class BossbarCommandDefinition implements SimpleCommandDefinition {
                                         group(
                                                 literal("color"),
                                                 enumChoice(BossbarCommand.BossbarColor.class).setName("BOSSBAR_COLOR").addTags("cspn:Bossbar Color")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarSetColorCommand((BossbarReference) d[0], (BossbarCommand.BossbarColor) p.find("BOSSBAR_COLOR").evaluate(ctx, null))),
+                                        ).setEvaluator((p, d) -> new BossbarSetColorCommand((BossbarReference) d[1], (BossbarCommand.BossbarColor) p.find("BOSSBAR_COLOR").evaluate((ISymbolContext) d[0]))),
                                         group(
                                                 literal("max"),
                                                 TridentProductions.integer(productions).addTags("cspn:Max Value")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarSetMaxCommand((BossbarReference) d[0], (int) p.find("INTEGER").evaluate(ctx, null))),
+                                        ).setEvaluator((p, d) -> new BossbarSetMaxCommand((BossbarReference) d[1], (int) p.find("INTEGER").evaluate((ISymbolContext) d[0]))),
                                         group(
                                                 literal("name"),
                                                 TridentProductions.noToken().addTags("cspn:Display Name"),
                                                 productions.getOrCreateStructure("TEXT_COMPONENT")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarSetNameCommand((BossbarReference) d[0], (TextComponent) p.find("TEXT_COMPONENT").evaluate(ctx, null))),
+                                        ).setEvaluator((p, d) -> new BossbarSetNameCommand((BossbarReference) d[1], (TextComponent) p.find("TEXT_COMPONENT").evaluate((ISymbolContext) d[0]))),
                                         group(
                                                 literal("players"), optional(TridentProductions.sameLine(), productions.getOrCreateStructure("ENTITY")).setSimplificationFunctionContentIndex(1).setName("VIEWING_PLAYERS")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarSetPlayersCommand((BossbarReference) d[0], (Entity) p.findThenEvaluate("VIEWING_PLAYERS", null, ctx, null))),
+                                        ).setEvaluator((p, d) -> new BossbarSetPlayersCommand((BossbarReference) d[1], (Entity) p.findThenEvaluate("VIEWING_PLAYERS", null, (ISymbolContext) d[0]))),
                                         group(
                                                 literal("style"),
                                                 enumChoice(BossbarCommand.BossbarStyle.class).setName("BOSSBAR_STYLE")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarSetStyleCommand((BossbarReference) d[0], (BossbarCommand.BossbarStyle) p.find("BOSSBAR_STYLE").evaluate(ctx, null))),
+                                        ).setEvaluator((p, d) -> new BossbarSetStyleCommand((BossbarReference) d[1], (BossbarCommand.BossbarStyle) p.find("BOSSBAR_STYLE").evaluate((ISymbolContext) d[0]))),
                                         group(
                                                 literal("value"),
                                                 TridentProductions.integer(productions).addTags("cspn:Value")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarSetValueCommand((BossbarReference) d[0], (int) p.find("INTEGER").evaluate(ctx, null))),
+                                        ).setEvaluator((p, d) -> new BossbarSetValueCommand((BossbarReference) d[1], (int) p.find("INTEGER").evaluate((ISymbolContext) d[0]))),
                                         group(
                                                 literal("visible"),
                                                 TridentProductions.rawBoolean().addTags(SuggestionTags.ENABLED, "cspn:Visible?")
-                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new BossbarSetVisibleCommand((BossbarReference) d[0], (boolean) p.find("BOOLEAN").evaluate(ctx, null)))
+                                        ).setEvaluator((p, d) -> new BossbarSetVisibleCommand((BossbarReference) d[1], (boolean) p.find("BOOLEAN").evaluate((ISymbolContext) d[0])))
                                 ).setName("INNER")
                         ).setEvaluator(BossbarCommandDefinition::parseSet)
                 ).setName("INNER")
@@ -104,32 +104,40 @@ public class BossbarCommandDefinition implements SimpleCommandDefinition {
         throw new UnsupportedOperationException(); //this step is optimized away
     }
 
-    private static Command parseAdd(TokenPattern<?> pattern, ISymbolContext ctx, Object[] data) {
-        ResourceLocation id = (ResourceLocation) pattern.find("RESOURCE_LOCATION").evaluate(ctx, null);
-        TextComponent name = (TextComponent) pattern.find("TEXT_COMPONENT").evaluate(ctx, null);
+    private static Command parseAdd(TokenPattern<?> pattern, Object... data) {
+        ISymbolContext ctx = (ISymbolContext) data[0];
+
+        ResourceLocation id = (ResourceLocation) pattern.find("RESOURCE_LOCATION").evaluate(ctx);
+        TextComponent name = (TextComponent) pattern.find("TEXT_COMPONENT").evaluate(ctx);
         BossbarReference ref = new BossbarReference(ctx.get(SetupModuleTask.INSTANCE).getNamespace(id.namespace), id.body);
 
         return new BossbarAddCommand(ref, name);
     }
 
-    private static Command parseGet(TokenPattern<?> pattern, ISymbolContext ctx, Object[] data) {
-        ResourceLocation id = (ResourceLocation) pattern.find("RESOURCE_LOCATION").evaluate(ctx, null);
+    private static Command parseGet(TokenPattern<?> pattern, Object... data) {
+        ISymbolContext ctx = (ISymbolContext) data[0];
+
+        ResourceLocation id = (ResourceLocation) pattern.find("RESOURCE_LOCATION").evaluate(ctx);
         BossbarReference ref = new BossbarReference(ctx.get(SetupModuleTask.INSTANCE).getNamespace(id.namespace), id.body);
 
-        return (Command) pattern.find("WHAT_TO_GET").evaluate(ctx, new Object[] {ref});
+        return (Command) pattern.find("WHAT_TO_GET").evaluate(ref);
     }
 
-    private static Command parseRemove(TokenPattern<?> pattern, ISymbolContext ctx, Object[] data) {
-        ResourceLocation id = (ResourceLocation) pattern.find("RESOURCE_LOCATION").evaluate(ctx, null);
+    private static Command parseRemove(TokenPattern<?> pattern, Object... data) {
+        ISymbolContext ctx = (ISymbolContext) data[0];
+
+        ResourceLocation id = (ResourceLocation) pattern.find("RESOURCE_LOCATION").evaluate(ctx);
         BossbarReference ref = new BossbarReference(ctx.get(SetupModuleTask.INSTANCE).getNamespace(id.namespace), id.body);
         return new BossbarRemoveCommand(ref);
     }
 
-    private static Command parseSet(TokenPattern<?> pattern, ISymbolContext ctx, Object[] data) {
-        ResourceLocation id = (ResourceLocation) pattern.find("RESOURCE_LOCATION").evaluate(ctx, null);
+    private static Command parseSet(TokenPattern<?> pattern, Object... data) {
+        ISymbolContext ctx = (ISymbolContext) data[0];
+
+        ResourceLocation id = (ResourceLocation) pattern.find("RESOURCE_LOCATION").evaluate(ctx);
         id.assertStandalone(pattern.find("RESOURCE_LOCATION"), ctx);
         BossbarReference ref = new BossbarReference(ctx.get(SetupModuleTask.INSTANCE).getNamespace(id.namespace), id.body);
 
-        return (Command) pattern.find("INNER").evaluate(ctx, new Object[] {ref});
+        return (Command) pattern.find("INNER").evaluate(ctx, ref);
     }
 }

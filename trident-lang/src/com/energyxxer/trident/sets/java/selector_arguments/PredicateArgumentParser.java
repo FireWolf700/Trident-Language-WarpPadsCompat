@@ -3,7 +3,6 @@ package com.energyxxer.trident.sets.java.selector_arguments;
 import com.energyxxer.commodore.functionlogic.selector.arguments.PredicateArgument;
 import com.energyxxer.commodore.types.defaults.PredicateReference;
 import com.energyxxer.enxlex.pattern_matching.matching.TokenPatternMatch;
-import com.energyxxer.enxlex.pattern_matching.structures.TokenPattern;
 import com.energyxxer.prismarine.PrismarineProductions;
 import com.energyxxer.prismarine.providers.PatternSwitchProviderUnit;
 import com.energyxxer.prismarine.symbols.contexts.ISymbolContext;
@@ -15,7 +14,7 @@ import com.energyxxer.trident.worker.tasks.SetupModuleTask;
 import static com.energyxxer.prismarine.PrismarineProductions.group;
 import static com.energyxxer.prismarine.PrismarineProductions.literal;
 
-public class PredicateArgumentParser implements PatternSwitchProviderUnit<ISymbolContext> {
+public class PredicateArgumentParser implements PatternSwitchProviderUnit {
     @Override
     public String[] getSwitchKeys() {
         return new String[] {"predicate"};
@@ -26,8 +25,9 @@ public class PredicateArgumentParser implements PatternSwitchProviderUnit<ISymbo
         return group(
                 literal("predicate").setName("SELECTOR_ARGUMENT_KEY"),
                 TridentProductions.equals(),
-                group(TridentProductions.not().setOptional(), TridentProductions.noToken().addTags("cspn:Predicate"), productions.getOrCreateStructure("RESOURCE_LOCATION")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                    ResourceLocation reference = (ResourceLocation) p.find("RESOURCE_LOCATION").evaluate(ctx, null);
+                group(TridentProductions.not().setOptional(), TridentProductions.noToken().addTags("cspn:Predicate"), productions.getOrCreateStructure("RESOURCE_LOCATION")).setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+                    ResourceLocation reference = (ResourceLocation) p.find("RESOURCE_LOCATION").evaluate(ctx);
 
                     return new PredicateArgument(new PredicateReference(ctx.get(SetupModuleTask.INSTANCE).getNamespace(reference.namespace), reference.body), p.find("NEGATED") != null);
                 })

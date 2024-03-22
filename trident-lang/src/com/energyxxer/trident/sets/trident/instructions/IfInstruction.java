@@ -26,7 +26,7 @@ public class IfInstruction implements InstructionDefinition {
 
     @Override
     public void run(TokenPattern<?> pattern, ISymbolContext ctx) {
-        boolean condition = (boolean) pattern.find("CONDITION").evaluate(ctx, null);
+        boolean condition = (boolean) pattern.find("CONDITION").evaluate(ctx);
         EObject.assertNotNull(condition, pattern, ctx);
 
         if(condition) {

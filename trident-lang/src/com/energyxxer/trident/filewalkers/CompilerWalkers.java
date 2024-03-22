@@ -28,6 +28,7 @@ import com.energyxxer.trident.worker.tasks.SetupBuildConfigTask;
 import com.energyxxer.trident.worker.tasks.SetupModuleTask;
 import com.energyxxer.trident.worker.tasks.SetupResourcePackTask;
 import com.energyxxer.trident.worker.tasks.SetupTypeMapTask;
+import com.energyxxer.util.StringLocation;
 import com.energyxxer.util.logger.Debug;
 import com.google.gson.*;
 
@@ -78,7 +79,7 @@ public class CompilerWalkers {
                     try {
                         obj = new Gson().fromJson(content, JsonObject.class);
                     } catch(JsonSyntaxException x) {
-                        walker.getReport().addNotice(new Notice(NoticeType.ERROR, "Invalid JSON in " + group.getCategory().toLowerCase() + " tag '" + tag + "': " + x.getMessage(), new Token("", new SourceFile(file), 0, 0, 0)));
+                        walker.getReport().addNotice(new Notice(NoticeType.ERROR, "Invalid JSON in " + group.getCategory().toLowerCase() + " tag '" + tag + "': " + x.getMessage(), new Token("", new SourceFile(file), new StringLocation(0))));
                         return false;
                     }
 
@@ -118,7 +119,7 @@ public class CompilerWalkers {
                                     try {
                                         created = module.getNamespace(loc.namespace).getTypeManager().getOrCreateDictionary(group.getCategory(), true).get(loc.body);
                                     } catch(TypeNotFoundException x) {
-                                        walker.getReport().addNotice(new Notice(NoticeType.WARNING, "Invalid value in " + group.getCategory().toLowerCase() + " tag '" + tag + "': " + loc + " is not a valid " + group.getCategory().toLowerCase() + " type", new Token("", new SourceFile(file), 0, 0, 0)));
+                                        walker.getReport().addNotice(new Notice(NoticeType.WARNING, "Invalid value in " + group.getCategory().toLowerCase() + " tag '" + tag + "': " + loc + " is not a valid " + group.getCategory().toLowerCase() + " type", new Token("", new SourceFile(file), new StringLocation(0))));
                                         continue;
                                     }
                                 }

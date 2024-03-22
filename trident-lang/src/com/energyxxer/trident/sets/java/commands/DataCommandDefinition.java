@@ -37,14 +37,16 @@ public class DataCommandDefinition implements SimpleCommandDefinition {
     public TokenPatternMatch createPatternMatch(PrismarineProductions productions, PrismarineProjectWorker worker) {
 
         TokenStructureMatch sourceMatch = choice(
-                group(literal("from"), productions.getOrCreateStructure("DATA_HOLDER"), optional(TridentProductions.sameLine(), productions.getOrCreateStructure("NBT_PATH")).setSimplificationFunctionContentIndex(1).setName("PATH_CLAUSE")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                    DataHolder holder = (DataHolder) p.find("DATA_HOLDER").evaluate(ctx, null);
+                group(literal("from"), productions.getOrCreateStructure("DATA_HOLDER"), optional(TridentProductions.sameLine(), productions.getOrCreateStructure("NBT_PATH")).setSimplificationFunctionContentIndex(1).setName("PATH_CLAUSE")).setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+                    DataHolder holder = (DataHolder) p.find("DATA_HOLDER").evaluate(ctx);
 
-                    NBTPath path = (NBTPath) p.findThenEvaluate("PATH_CLAUSE", null, ctx, null);
+                    NBTPath path = (NBTPath) p.findThenEvaluate("PATH_CLAUSE", null, ctx);
                     return new ModifySourceFromHolder(holder, path);
                 }),
-                group(literal("value"), TridentProductions.noToken().addTags("cspn:NBT Value"), productions.getOrCreateStructure("NBT_VALUE")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                    NBTTag value = (NBTTag) p.find("NBT_VALUE").evaluate(ctx, null);
+                group(literal("value"), TridentProductions.noToken().addTags("cspn:NBT Value"), productions.getOrCreateStructure("NBT_VALUE")).setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+                    NBTTag value = (NBTTag) p.find("NBT_VALUE").evaluate(ctx);
 
                     return new ModifySourceValue(value);
                 })
@@ -62,10 +64,11 @@ public class DataCommandDefinition implements SimpleCommandDefinition {
                                         productions.getOrCreateStructure("NBT_PATH"),
                                         TridentProductions.real(productions).setOptional().setName("SCALE").addTags("cspn:Scale")
                                 ).setName("PATH_CLAUSE")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            DataHolder target = (DataHolder) p.find("DATA_HOLDER").evaluate(ctx, null);
-                            NBTPath path = (NBTPath) p.findThenEvaluate("PATH_CLAUSE.NBT_PATH", null, ctx, null);
-                            double scale = (double) p.findThenEvaluate("PATH_CLAUSE.SCALE", 1.0, ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            DataHolder target = (DataHolder) p.find("DATA_HOLDER").evaluate(ctx);
+                            NBTPath path = (NBTPath) p.findThenEvaluate("PATH_CLAUSE.NBT_PATH", null, ctx);
+                            double scale = (double) p.findThenEvaluate("PATH_CLAUSE.SCALE", 1.0, ctx);
 
                             try {
                                 return new DataGetCommand(target, path, scale);
@@ -81,9 +84,10 @@ public class DataCommandDefinition implements SimpleCommandDefinition {
                                 productions.getOrCreateStructure("DATA_HOLDER"),
                                 TridentProductions.noToken().addTags("cspn:NBT"),
                                 productions.getOrCreateStructure("NBT_COMPOUND")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            DataHolder target = (DataHolder) p.find("DATA_HOLDER").evaluate(ctx, null);
-                            TagCompound nbt = (TagCompound) p.find("NBT_COMPOUND").evaluate(ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            DataHolder target = (DataHolder) p.find("DATA_HOLDER").evaluate(ctx);
+                            TagCompound nbt = (TagCompound) p.find("NBT_COMPOUND").evaluate(ctx);
 
                             try {
                                 PathContext context = NBTInspector.createContextForDataHolder(target, ctx);
@@ -101,22 +105,24 @@ public class DataCommandDefinition implements SimpleCommandDefinition {
                                 productions.getOrCreateStructure("DATA_HOLDER"),
                                 productions.getOrCreateStructure("NBT_PATH"),
                                 choice(
-                                        literal("append").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> DataModifyCommand.APPEND()),
-                                        group(literal("insert"), TridentProductions.integer(productions).setName("INSERT_INDEX").addTags("cspn:Insert Index")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            int insertIndex = (int) p.find("INSERT_INDEX").evaluate(ctx, null);
+                                        literal("append").setEvaluator((p, d) -> DataModifyCommand.APPEND()),
+                                        group(literal("insert"), TridentProductions.integer(productions).setName("INSERT_INDEX").addTags("cspn:Insert Index")).setEvaluator((p, d) -> {
+                                            ISymbolContext ctx = (ISymbolContext) d[0];
+                                            int insertIndex = (int) p.find("INSERT_INDEX").evaluate(ctx);
                                             return DataModifyCommand.INSERT(insertIndex);
                                         }),
-                                        literal("merge").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> DataModifyCommand.MERGE()),
-                                        literal("prepend").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> DataModifyCommand.PREPEND()),
-                                        literal("set").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> DataModifyCommand.SET())
+                                        literal("merge").setEvaluator((p, d) -> DataModifyCommand.MERGE()),
+                                        literal("prepend").setEvaluator((p, d) -> DataModifyCommand.PREPEND()),
+                                        literal("set").setEvaluator((p, d) -> DataModifyCommand.SET())
                                 ).setName("INNER"),
                                 sourceMatch
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            DataHolder target = (DataHolder) p.find("DATA_HOLDER").evaluate(ctx, null);
-                            NBTPath path = (NBTPath) p.find("NBT_PATH").evaluate(ctx, null);
-                            DataModifyCommand.ModifySource source = (DataModifyCommand.ModifySource) p.find("DATA_SOURCE").evaluate(ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            DataHolder target = (DataHolder) p.find("DATA_HOLDER").evaluate(ctx);
+                            NBTPath path = (NBTPath) p.find("NBT_PATH").evaluate(ctx);
+                            DataModifyCommand.ModifySource source = (DataModifyCommand.ModifySource) p.find("DATA_SOURCE").evaluate(ctx);
 
-                            DataModifyCommand.ModifyOperation operation = (DataModifyCommand.ModifyOperation) p.find("INNER").evaluate(ctx, null);
+                            DataModifyCommand.ModifyOperation operation = (DataModifyCommand.ModifyOperation) p.find("INNER").evaluate(ctx);
 
                             NBTPath analysisPath = path;
                             if (operation.isListModification()) {
@@ -146,9 +152,10 @@ public class DataCommandDefinition implements SimpleCommandDefinition {
                             }
 
                         }),
-                        group(literal("remove"), productions.getOrCreateStructure("DATA_HOLDER"), productions.getOrCreateStructure("NBT_PATH")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                        group(literal("remove"), productions.getOrCreateStructure("DATA_HOLDER"), productions.getOrCreateStructure("NBT_PATH")).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
                             try {
-                                return new DataRemoveCommand((DataHolder) p.find("DATA_HOLDER").evaluate(ctx, null), (NBTPath) p.find("NBT_PATH").evaluate(ctx, null));
+                                return new DataRemoveCommand((DataHolder) p.find("DATA_HOLDER").evaluate(ctx), (NBTPath) p.find("NBT_PATH").evaluate(ctx));
                             } catch (CommodoreException x) {
                                 TridentExceptionUtil.handleCommodoreException(x, p, ctx)
                                         .map(CommodoreException.Source.ENTITY_ERROR, p.tryFind("DATA_HOLDER.ENTITY"))

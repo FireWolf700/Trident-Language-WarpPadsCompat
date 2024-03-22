@@ -33,12 +33,14 @@ public class DebugCommandDefinition implements SimpleCommandDefinition {
                                 literal("function"),
                                 TridentProductions.resourceLocationFixer,
                                 wrapper(productions.getOrCreateStructure("RESOURCE_LOCATION_TAGGED")).setName("FUNCTION_REFERENCE").addTags(TridentSuggestionTags.RESOURCE, TridentSuggestionTags.FUNCTION)
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+
                             return new DebugFunctionCommand(CommonParsers.parseFunctionTag((TokenStructure) p.find("FUNCTION_REFERENCE.RESOURCE_LOCATION_TAGGED"), ctx));
                         }),
-                        literal("report").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new DebugReportCommand()),
-                        literal("start").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new DebugStartCommand()),
-                        literal("stop").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new DebugStopCommand())
+                        literal("report").setEvaluator((p, d) -> new DebugReportCommand()),
+                        literal("start").setEvaluator((p, d) -> new DebugStartCommand()),
+                        literal("stop").setEvaluator((p, d) -> new DebugStopCommand())
                 ).setName("INNER")
         ).setSimplificationFunctionFind("INNER");
     }

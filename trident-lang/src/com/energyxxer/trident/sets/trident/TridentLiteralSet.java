@@ -66,24 +66,26 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
 
         final Consumer<TokenPattern.SimplificationDomain> wrapperSimplification = (d) -> {
             d.pattern = ((TokenGroup) d.pattern).getContents()[2];
-            d.data = null;
+            d.data = new Object[] {(ISymbolContext) d.data[0]};
         };
 
         TokenPatternMatch scale = group(matchItem(COMPILER_OPERATOR, "*"), TridentProductions.real(productions)).setSimplificationFunctionContentIndex(1).setOptional().setName("SCALE");
         TokenPatternMatch explicitType = group(TridentProductions.brace("("), productions.getOrCreateStructure("NUMERIC_NBT_TYPE"), TridentProductions.brace(")")).setSimplificationFunctionContentIndex(1).setOptional().setName("EXPLICIT_TYPE");
 
-        TokenGroupMatch scoreHead = (TokenGroupMatch) group(ofType(ARROW), productions.getOrCreateStructure("OBJECTIVE_NAME")).setName("SCORE_POINTER_HEAD").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-            PointerObject pointer = (PointerObject) d[0];
+        TokenGroupMatch scoreHead = (TokenGroupMatch) group(ofType(ARROW), productions.getOrCreateStructure("OBJECTIVE_NAME")).setName("SCORE_POINTER_HEAD").setEvaluator((p, d) -> {
+            ISymbolContext ctx = (ISymbolContext) d[0];
+            PointerObject pointer = (PointerObject) d[1];
 
-            String objectiveName = (String) ((TokenGroup) p).getContents()[1].evaluate(ctx, new Object[] {String.class});
+            String objectiveName = (String) ((TokenGroup) p).getContents()[1].evaluate(ctx, String.class);
             pointer.setMember(objectiveName);
 
             return null;
         });
-        TokenGroupMatch nbtHead = (TokenGroupMatch) group(TridentProductions.dot(), productions.getOrCreateStructure("NBT_PATH"), scale, explicitType).setName("NBT_POINTER_HEAD").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-            PointerObject pointer = (PointerObject) d[0];
+        TokenGroupMatch nbtHead = (TokenGroupMatch) group(TridentProductions.dot(), productions.getOrCreateStructure("NBT_PATH"), scale, explicitType).setName("NBT_POINTER_HEAD").setEvaluator((p, d) -> {
+            ISymbolContext ctx = (ISymbolContext) d[0];
+            PointerObject pointer = (PointerObject) d[1];
 
-            NBTPath path = (NBTPath) p.find("NBT_PATH").evaluate(ctx, null);
+            NBTPath path = (NBTPath) p.find("NBT_PATH").evaluate(ctx);
 
             if(pointer.getTarget() instanceof PointerObject) {
                 PointerObject basePointer = (PointerObject) pointer.getTarget();
@@ -108,8 +110,8 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                 }
             }
             pointer.setMember(path);
-            pointer.setScale((double) p.findThenEvaluate("SCALE", 1.0, ctx, null));
-            pointer.setNumericType((NumericNBTType) p.findThenEvaluate("EXPLICIT_TYPE", null, ctx, null));
+            pointer.setScale((double) p.findThenEvaluate("SCALE", 1.0, ctx));
+            pointer.setNumericType((NumericNBTType) p.findThenEvaluate("EXPLICIT_TYPE", null, ctx));
 
             return null;
         });
@@ -118,49 +120,57 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
         TokenStructureMatch anyHead = choice(scoreHead, nbtHead, storageHead).setName("POINTER_HEAD");
 
         TokenGroupMatch varPointer = (TokenGroupMatch) group(productions.getOrCreateStructure("INTERPOLATION_BLOCK"), wrapper(anyHead).setOptional().setName("POINTER_HEAD_WRAPPER")).setName("VARIABLE_POINTER")
-                .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                .setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+
                     TokenPattern<?> targetPattern = ((TokenGroup) p).getContents()[0];
 
-                    Object target = targetPattern.evaluate(ctx, null);
+                    Object target = targetPattern.evaluate(ctx);
 
                     if(p.find("POINTER_HEAD_WRAPPER") != null) {
                         target = PrismarineTypeSystem.assertOfClass(target, targetPattern, ctx, Entity.class, CoordinateSet.class, ResourceLocation.class, PointerObject.class);
 
                         PointerObject pointer = new PointerObject(ctx.getTypeSystem(), target, null);
 
-                        p.find("POINTER_HEAD_WRAPPER").evaluate(ctx, new Object[] {pointer});
+                        p.find("POINTER_HEAD_WRAPPER").evaluate(ctx, pointer);
                         return pointer.validate(p, ctx);
                     } else {
                         return PrismarineTypeSystem.assertOfClass(target, targetPattern, ctx, PointerObject.class).validate(p, ctx);
                     }
                 });
         TokenGroupMatch entityPointer = (TokenGroupMatch) group(productions.getOrCreateStructure("LIMITED_ENTITY"), anyHead).setName("ENTITY_POINTER")
-                .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                    Object target = p.find("ENTITY").evaluate(ctx, null);
+                .setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+
+                    Object target = p.find("ENTITY").evaluate(ctx);
 
                     PointerObject pointer = new PointerObject(ctx.getTypeSystem(), target, null);
 
-                    p.find("POINTER_HEAD").evaluate(ctx, new Object[] {pointer});
+                    p.find("POINTER_HEAD").evaluate(ctx, pointer);
 
                     return pointer.validate(p, ctx);
                 });
         TokenGroupMatch blockPointer = (TokenGroupMatch) group(TridentProductions.brace("("), productions.getOrCreateStructure("COORDINATE_SET"), TridentProductions.brace(")"), nbtHead).setName("BLOCK_POINTER").setName("ENTITY_POINTER")
-                .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                    Object target = p.find("COORDINATE_SET").evaluate(ctx, null);
+                .setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+
+                    Object target = p.find("COORDINATE_SET").evaluate(ctx);
 
                     PointerObject pointer = new PointerObject(ctx.getTypeSystem(), target, null);
 
-                    p.find("NBT_POINTER_HEAD").evaluate(ctx, new Object[] {pointer});
+                    p.find("NBT_POINTER_HEAD").evaluate(ctx, pointer);
 
                     return pointer.validate(p, ctx);
                 });
         TokenGroupMatch storagePointer = (TokenGroupMatch) group(TridentProductions.resourceLocationFixer, productions.getOrCreateStructure("RESOURCE_LOCATION"), storageHead).setName("STORAGE_POINTER")
-                .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                    Object target = p.find("RESOURCE_LOCATION").evaluate(ctx, null);
+                .setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+
+                    Object target = p.find("RESOURCE_LOCATION").evaluate(ctx);
 
                     PointerObject pointer = new PointerObject(ctx.getTypeSystem(), target, null);
 
-                    p.find("STORAGE_POINTER_HEAD").evaluate(ctx, new Object[] {pointer});
+                    p.find("STORAGE_POINTER_HEAD").evaluate(ctx, pointer);
 
                     return pointer.validate(p, ctx);
                 });
@@ -183,11 +193,12 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                         group(
                                 literal("function").setName("VALUE_WRAPPER_KEY"),
                                 choice(
-                                        group(productions.getOrCreateStructure("ANONYMOUS_INNER_FUNCTION")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            TridentFile innerFile = TridentFile.createInnerFile(((TokenGroup)p).getContents()[0], null);
+                                        group(productions.getOrCreateStructure("ANONYMOUS_INNER_FUNCTION")).setEvaluator((p, d) -> {
+                                            TridentFile innerFile = TridentFile.createInnerFile(((TokenGroup)p).getContents()[0], (ISymbolContext) d[0]);
                                             return innerFile.getResourceLocation();
                                         }),
-                                        group(productions.getOrCreateStructure("DYNAMIC_FUNCTION")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                                        group(productions.getOrCreateStructure("DYNAMIC_FUNCTION")).setEvaluator((p, d) -> {
+                                            ISymbolContext ctx = (ISymbolContext) d[0];
                                             PrimitivePrismarineFunction function = new PrismarineFunction(DataStructureLiteralSet.nextFunctionName, TridentTempFindABetterHome.parseDynamicFunction(((TokenGroup) p).getContents()[0], ctx), ctx);
                                             if(DataStructureLiteralSet.nextThis != null) {
                                                 function = new PrismarineFunction.FixedThisFunction(function, DataStructureLiteralSet.nextThis);
@@ -199,8 +210,9 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                 ).setGreedy(true);
 
 
-        TokenPatternMatch pointerAsScore = group(productions.getOrCreateStructure("POINTER")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-            PointerObject pointer = (PointerObject) ((TokenGroup) p).getContents()[0].evaluate(ctx, null);
+        TokenPatternMatch pointerAsScore = group(productions.getOrCreateStructure("POINTER")).setEvaluator((p, d) -> {
+            ISymbolContext ctx = (ISymbolContext) d[0];
+            PointerObject pointer = (PointerObject) ((TokenGroup) p).getContents()[0].evaluate(ctx);
             if (!(pointer.getMember() instanceof String)) {
                 throw new PrismarineException(PrismarineTypeSystem.TYPE_ERROR, "Expected score pointer, instead got NBT pointer", p, ctx);
             }
@@ -211,8 +223,9 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                 literal("deref"),
                 TridentProductions.sameLine(),
                 PrismarineTypeSystem.validatorGroup(productions.getOrCreateStructure("INTERPOLATION_BLOCK"), false, PointerObject.class).setName("POINTER_DEREFERENCE")
-        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-            PointerObject pointer = (PointerObject) p.find("POINTER_DEREFERENCE").evaluate(ctx, null);
+        ).setEvaluator((p, d) -> {
+            ISymbolContext ctx = (ISymbolContext) d[0];
+            PointerObject pointer = (PointerObject) p.find("POINTER_DEREFERENCE").evaluate(ctx);
             if (!(pointer.getMember() instanceof String)) {
                 throw new PrismarineException(PrismarineTypeSystem.TYPE_ERROR, "Expected score pointer, instead got NBT pointer", p, ctx);
             }
@@ -230,7 +243,8 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                 .addTags("cspn:Score");
 
 
-        PostValidationPatternEvaluator<ISymbolContext> entityReferenceEvaluator = (value, p, ctx, d) -> {
+        PostValidationPatternEvaluator entityReferenceEvaluator = (value, p, d) -> {
+            ISymbolContext ctx = (ISymbolContext) d[0];
             if(value instanceof CustomEntity) return value;
             if(value instanceof TagCompound) {
                 NBTTag idTag = ((TagCompound) value).get("id");
@@ -241,24 +255,25 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                 }
                 return value;
             }
-            return MinecraftLiteralSet.parseType(value, p, ctx, EntityType.CATEGORY, d != null && d.length > 0 && (boolean) d[0]);
+            return MinecraftLiteralSet.parseType(value, p, ctx, EntityType.CATEGORY, d.length > 1 && (boolean) d[1]);
         };
 
         productions.getOrCreateStructure("COMPONENT_LIST_BRACELESS").add(
                 list(
                         PrismarineTypeSystem.validatorGroup(
                                 productions.getOrCreateStructure("INTERPOLATION_VALUE"),
-                                d -> null,
-                                (Object value, TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                    ArrayList<CustomEntity> finalList = (ArrayList<CustomEntity>) d[0];
+                                d -> new Object[] {d[0]},
+                                (value, p, d) -> {
+                                    ISymbolContext ctx = (ISymbolContext) d[0];
+                                    ArrayList<CustomEntity> finalList = (ArrayList<CustomEntity>) d[1];
 
                                     collectComponent(value, finalList, p, ctx);
                                     return null;
                                 }, false, CustomEntity.class, ListObject.class),
                         TridentProductions.comma()
-                ).setName("COMPONENT_LIST").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                ).setName("COMPONENT_LIST").setEvaluator((p, d) -> {
                     for(TokenPattern<?> inner : ((TokenList) p).getContentsExcludingSeparators()) {
-                        inner.evaluate(ctx, d);
+                        inner.evaluate(d);
                     }
                     return null;
                 })
@@ -269,9 +284,10 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                         TridentProductions.brace("["),
                         wrapperOptional(productions.getOrCreateStructure("COMPONENT_LIST_BRACELESS")).setName("COMPONENT_LIST_BRACELESS"),
                         TridentProductions.brace("]")
-                ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                ).setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
                     ArrayList<CustomEntity> finalList = new ArrayList<>();
-                    p.findThenEvaluate("COMPONENT_LIST_BRACELESS", null, ctx, new Object[] {finalList});
+                    p.findThenEvaluate("COMPONENT_LIST_BRACELESS", null, ctx, finalList);
                     return finalList;
                 })
         );
@@ -283,7 +299,7 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                 .add(
                         PrismarineTypeSystem.validatorGroup(
                                 productions.getOrCreateStructure("INTERPOLATION_BLOCK"),
-                                d -> null,
+                                d -> new Object[] {d[0]},
                                 entityReferenceEvaluator,
                                 false,
                                 ResourceLocation.class, String.class, CustomEntity.class, TagCompound.class
@@ -297,7 +313,7 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                 .add(
                         PrismarineTypeSystem.validatorGroup(
                                 productions.getOrCreateStructure("INTERPOLATION_BLOCK"),
-                                d -> null,
+                                d -> new Object[] {d[0]},
                                 entityReferenceEvaluator,
                                 false,
                                 ResourceLocation.class, CustomEntity.class
@@ -311,13 +327,13 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                 .add(
                         group(PrismarineTypeSystem.validatorGroup(
                                 productions.getOrCreateStructure("INTERPOLATION_BLOCK"),
-                                d -> null,
+                                d -> new Object[] {d[0]},
                                 entityReferenceEvaluator,
                                 false,
                                 ResourceLocation.class, CustomEntity.class
                         ))
                                 .setSimplificationFunction(d -> {
-                                    d.data = null;
+                                    d.data = new Object[] {(ISymbolContext) d.data[0]};
                                     d.pattern = ((TokenGroup)d.pattern).getContents()[0];
                                 })
                 );
@@ -352,7 +368,7 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                                 }).addProcessor(ValueAccessExpressionSet.verifySymbol)
                         ).setName("VARIABLE").setSimplificationFunction(d -> {
                             d.pattern = d.pattern.find("VARIABLE_NAME");
-                            d.data = null;
+                            d.data = new Object[] {(ISymbolContext) d.data[0]};
                         })
                 )
                 .add(
@@ -368,15 +384,17 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
                             }
                         }).setName("INTERPOLATION_WRAPPER").setSimplificationFunction(d -> {
                             d.pattern = d.pattern.find("INTERPOLATION_VALUE");
-                            d.data = null;
+                            d.data = new Object[] {(ISymbolContext) d.data[0]};
                         })
                 );
     }
 
-    public static SummonData parseNewEntityLiteral(TokenPattern<?> pattern, ISymbolContext ctx, Object[] data) {
-        TagCompound nbt = (TagCompound) pattern.findThenEvaluate("NEW_ENTITY_NBT", null, ctx, null);
+    public static SummonData parseNewEntityLiteral(TokenPattern<?> pattern, Object... data) {
+        ISymbolContext ctx = (ISymbolContext) data[0];
+
+        TagCompound nbt = (TagCompound) pattern.findThenEvaluate("NEW_ENTITY_NBT", null, ctx);
         Type type;
-        Object reference = pattern.find("TRIDENT_ENTITY_ID_NBT").evaluate(ctx, null);
+        Object reference = pattern.find("TRIDENT_ENTITY_ID_NBT").evaluate(ctx);
 
         if(reference instanceof Type) {
             type = (Type) reference;
@@ -414,7 +432,7 @@ public class TridentLiteralSet extends PatternProviderSet { //pointers, type_def
             throw new PrismarineException(PrismarineException.Type.IMPOSSIBLE, "Unknown entity reference return type: " + reference.getClass().getSimpleName(), pattern.find("ENTITY_ID"), ctx);
         }
 
-        ArrayList<CustomEntity> components = (ArrayList<CustomEntity>) pattern.findThenEvaluate("IMPLEMENTED_COMPONENTS", null, ctx, null);
+        ArrayList<CustomEntity> components = (ArrayList<CustomEntity>) pattern.findThenEvaluate("IMPLEMENTED_COMPONENTS", null, ctx);
         if(components != null) {
             if (nbt == null) nbt = new TagCompound();
             for(CustomEntity component : components) {

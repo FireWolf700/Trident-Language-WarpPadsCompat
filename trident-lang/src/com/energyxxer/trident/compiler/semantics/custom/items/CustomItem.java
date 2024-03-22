@@ -230,19 +230,19 @@ public class CustomItem implements TypeHandler<CustomItem> {
     public static void defineItem(TokenPattern<?> pattern, ISymbolContext ctx) {
         SymbolVisibility visibility = CommonParsers.parseVisibility(pattern.find("SYMBOL_VISIBILITY"), ctx, SymbolVisibility.GLOBAL);
 
-        String itemName = (String) pattern.findThenEvaluate("ITEM_NAME.IDENTIFIER_A", null, ctx, null);
+        String itemName = (String) pattern.findThenEvaluate("ITEM_NAME.IDENTIFIER_A", null, ctx);
         if(itemName == null) { //Is not an IDENTIFIER_A
             itemName = pattern.find("ITEM_NAME").flatten(false);
         }
 
-        Type defaultType = (Type) pattern.find("ITEM_ID").evaluate(ctx, null);
+        Type defaultType = (Type) pattern.find("ITEM_ID").evaluate(ctx);
 
         final CustomItem itemDecl;
         TokenPattern<?> rawCustomModelData = pattern.find("CUSTOM_MODEL_DATA.INTEGER");
 
         if(!itemName.equals("default")) {
             itemDecl = new CustomItem(itemName, defaultType, ctx);
-            if(rawCustomModelData != null) itemDecl.setCustomModelData((Integer) rawCustomModelData.evaluate(ctx, null), ctx);
+            if(rawCustomModelData != null) itemDecl.setCustomModelData((Integer) rawCustomModelData.evaluate(ctx), ctx);
 
             ctx.putInContextForVisibility(visibility, new Symbol(itemName, visibility, itemDecl));
         } else if(rawCustomModelData != null) {
@@ -270,7 +270,7 @@ public class CustomItem implements TypeHandler<CustomItem> {
                                 collector.log(new PrismarineException(TridentExceptionUtil.Source.STRUCTURAL_ERROR, "Default NBT isn't allowed for default items", entry, ctx));
                                 break;
                             }
-                            TagCompound newNBT = (TagCompound) entry.find("NBT_COMPOUND").evaluate(ctx, null);
+                            TagCompound newNBT = (TagCompound) entry.find("NBT_COMPOUND").evaluate(ctx);
                             PathContext context = new PathContext().setIsSetting(true).setProtocol(DEFAULT, "ITEM_TAG");
                             NBTInspector.inspectTag(newNBT, context, entry.find("NBT_COMPOUND"), ctx);
                             itemDecl.mergeNBT(newNBT, ctx);
@@ -319,7 +319,7 @@ public class CustomItem implements TypeHandler<CustomItem> {
                                                 }
                                             }
 
-                                            ArrayList<ExecuteModifier> eventModifiers = (ArrayList<ExecuteModifier>) modifiers.find("EVENT_MODIFIERS").evaluate(finalCtx, null);
+                                            ArrayList<ExecuteModifier> eventModifiers = (ArrayList<ExecuteModifier>) modifiers.find("EVENT_MODIFIERS").evaluate(finalCtx);
 
                                             if (onWhat.getName().equals("ITEM_CRITERIA")) {
                                                 TridentUtil.assertLanguageLevel(finalCtx, 3, "Item events are", entry, collector);
@@ -351,7 +351,7 @@ public class CustomItem implements TypeHandler<CustomItem> {
                             }
 
                             NBTCompoundBuilder builder = new NBTCompoundBuilder();
-                            builder.put(new NBTPath("display", new NBTPath("Name")), new TagString("Name", entry.find("TEXT_COMPONENT").evaluate(ctx, null).toString()));
+                            builder.put(new NBTPath("display", new NBTPath("Name")), new TagString("Name", entry.find("TEXT_COMPONENT").evaluate(ctx).toString()));
 
                             itemDecl.mergeNBT(builder.getCompound(), ctx);
                             break;
@@ -368,7 +368,7 @@ public class CustomItem implements TypeHandler<CustomItem> {
                             if (rawLoreList != null) {
                                 for (TokenPattern<?> rawLine : rawLoreList.getContents()) {
                                     if (rawLine.getName().equals("TEXT_COMPONENT"))
-                                        loreList.add(new TagString(rawLine.evaluate(ctx, null).toString()));
+                                        loreList.add(new TagString(rawLine.evaluate(ctx).toString()));
                                 }
                             }
 
@@ -386,7 +386,7 @@ public class CustomItem implements TypeHandler<CustomItem> {
                             break;
                         }
                         case "ITEM_EVAL": {
-                            ((TokenStructure) entry.find("INTERPOLATION_VALUE")).getContents().evaluate(ctx, null);
+                            ((TokenStructure) entry.find("INTERPOLATION_VALUE")).getContents().evaluate(ctx);
                             break;
                         }
                         case "COMMENT": {

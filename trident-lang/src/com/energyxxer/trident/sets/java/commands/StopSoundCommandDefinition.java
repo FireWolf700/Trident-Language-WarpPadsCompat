@@ -40,11 +40,12 @@ public class StopSoundCommandDefinition implements SimpleCommandDefinition {
                                         TridentProductions.sameLine(),
                                         productions.getOrCreateStructure("RESOURCE_LOCATION")
                                 ).setSimplificationFunctionContentIndex(1).setName("SOUND_RESOURCE").addTags(SuggestionTags.ENABLED, TridentSuggestionTags.RESOURCE, TridentSuggestionTags.SOUND_RESOURCE).addTags("cspn:Sound")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            Entity entity = (Entity) d[0];
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            Entity entity = (Entity) d[1];
 
-                            PlaySoundCommand.Source soundChannel = (PlaySoundCommand.Source) p.find("SOUND_CHANNEL").evaluate(ctx, null);
-                            ResourceLocation sound = (ResourceLocation) p.findThenEvaluate("SOUND_RESOURCE", null, ctx, null);
+                            PlaySoundCommand.Source soundChannel = (PlaySoundCommand.Source) p.find("SOUND_CHANNEL").evaluate(ctx);
+                            ResourceLocation sound = (ResourceLocation) p.findThenEvaluate("SOUND_RESOURCE", null, ctx);
 
                             return new StopSoundCommand(entity, soundChannel, sound != null ? sound.toString() : null);
                         }),
@@ -53,9 +54,10 @@ public class StopSoundCommandDefinition implements SimpleCommandDefinition {
                                 TridentProductions.sameLine(),
                                 TridentProductions.resourceLocationFixer,
                                 wrapper(productions.getOrCreateStructure("RESOURCE_LOCATION")).setName("SOUND_RESOURCE").addTags(SuggestionTags.ENABLED, TridentSuggestionTags.RESOURCE, TridentSuggestionTags.SOUND_RESOURCE).addTags("cspn:Sound")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            Entity entity = (Entity) d[0];
-                            ResourceLocation sound = (ResourceLocation) p.find("SOUND_RESOURCE").evaluate(ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            Entity entity = (Entity) d[1];
+                            ResourceLocation sound = (ResourceLocation) p.find("SOUND_RESOURCE").evaluate(ctx);
                             return new StopSoundCommand(entity, sound.toString());
                         })
                 ).setOptional().setName("INNER")
@@ -64,10 +66,10 @@ public class StopSoundCommandDefinition implements SimpleCommandDefinition {
 
     @Override
     public Command parseSimple(TokenPattern<?> pattern, ISymbolContext ctx) {
-        Entity entity = (Entity) pattern.find("ENTITY").evaluate(ctx, null);
+        Entity entity = (Entity) pattern.find("ENTITY").evaluate(ctx);
 
         try {
-            return (Command) pattern.findThenEvaluateLazyDefault("INNER", () -> new StopSoundCommand(entity), ctx, new Object[] {entity});
+            return (Command) pattern.findThenEvaluateLazyDefault("INNER", () -> new StopSoundCommand(entity), ctx, entity);
         } catch (CommodoreException x) {
             TridentExceptionUtil.handleCommodoreException(x, pattern, ctx)
                     .map(CommodoreException.Source.ENTITY_ERROR, pattern.tryFind("ENTITY"))

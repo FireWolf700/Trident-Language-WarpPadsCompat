@@ -69,7 +69,8 @@ public class DataStructureLiteralSet extends PatternProviderSet { //dictionaries
                         TridentProductions.comma()
                 ).setOptional().setName("DICTIONARY_ENTRY_LIST"),
                 TridentProductions.brace("}"))).addTags("primitive:dictionary").addProcessor(claimTopSymbol).addProcessor(endComplexValue).addFailProcessor((ip, l) -> {if(ip != null && ip.getCharLength() > 0) endComplexValue.accept(null, l);})
-        .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+        .setEvaluator((p, d) -> {
+            ISymbolContext ctx = (ISymbolContext) d[0];
             DictionaryObject dict = new DictionaryObject(ctx.getTypeSystem());
 
             TokenList entryList = (TokenList) p.find("DICTIONARY_ENTRY_LIST");
@@ -82,7 +83,7 @@ public class DataStructureLiteralSet extends PatternProviderSet { //dictionaries
                     }
                     nextThis = dict;
                     nextFunctionName = key;
-                    Object value = entry.find("INTERPOLATION_VALUE").evaluate(ctx, null);
+                    Object value = entry.find("INTERPOLATION_VALUE").evaluate(ctx);
                     nextThis = null;
                     nextFunctionName = null;
                     dict.put(key, value);
@@ -101,7 +102,8 @@ public class DataStructureLiteralSet extends PatternProviderSet { //dictionaries
                         TridentProductions.brace("]")
                 ).addProcessor(surroundBlock).addProcessor(endComplexValue).addFailProcessor((ip, l) -> {if(ip != null && ip.getCharLength() > 0) endComplexValue.accept(null, l);}))
                 .addTags("primitive:list")
-        .setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+        .setEvaluator((p, d) -> {
+            ISymbolContext ctx = (ISymbolContext) d[0];
             ListObject list = new ListObject(ctx.getTypeSystem());
 
             TokenList entryList = (TokenList) p.find("LIST_ENTRIES");
@@ -109,7 +111,7 @@ public class DataStructureLiteralSet extends PatternProviderSet { //dictionaries
             if (entryList != null) {
                 for (TokenPattern<?> entry : entryList.getContentsExcludingSeparators()) {
                     nextThis = list;
-                    list.add(entry.evaluate(ctx, null));
+                    list.add(entry.evaluate(ctx));
                     nextThis = null;
                 }
             }

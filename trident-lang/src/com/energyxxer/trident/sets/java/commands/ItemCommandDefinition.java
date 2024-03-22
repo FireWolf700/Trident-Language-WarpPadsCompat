@@ -39,14 +39,16 @@ public class ItemCommandDefinition implements SimpleCommandDefinition {
     @Override
     public TokenPatternMatch createPatternMatch(PrismarineProductions productions, PrismarineProjectWorker worker) {
         TokenPatternMatch ITEM_HOLDER = choice(
-                group(literal("block"), productions.getOrCreateStructure("COORDINATE_SET"), productions.getOrCreateStructure("SLOT_ID")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                    CoordinateSet pos = (CoordinateSet) p.find("COORDINATE_SET").evaluate(ctx, null);
-                    Type slot = (Type) p.find("SLOT_ID").evaluate(ctx, null);
+                group(literal("block"), productions.getOrCreateStructure("COORDINATE_SET"), productions.getOrCreateStructure("SLOT_ID")).setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+                    CoordinateSet pos = (CoordinateSet) p.find("COORDINATE_SET").evaluate(ctx);
+                    Type slot = (Type) p.find("SLOT_ID").evaluate(ctx);
                     return new ItemHolderBlock(pos, slot);
                 }),
-                group(literal("entity"), productions.getOrCreateStructure("ENTITY"), productions.getOrCreateStructure("SLOT_ID")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                    Entity entity = (Entity) p.find("ENTITY").evaluate(ctx, null);
-                    Type slot = (Type) p.find("SLOT_ID").evaluate(ctx, null);
+                group(literal("entity"), productions.getOrCreateStructure("ENTITY"), productions.getOrCreateStructure("SLOT_ID")).setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
+                    Entity entity = (Entity) p.find("ENTITY").evaluate(ctx);
+                    Type slot = (Type) p.find("SLOT_ID").evaluate(ctx);
                     return new ItemHolderEntity(entity, slot);
                 })
         ).setName("ITEM_HOLDER");
@@ -57,12 +59,13 @@ public class ItemCommandDefinition implements SimpleCommandDefinition {
                         group(
                                 ITEM_HOLDER,
                                 choice(
-                                        group(literal("copy"), ITEM_HOLDER, optional(sameLine(), resourceLocationFixer, productions.getOrCreateStructure("RESOURCE_LOCATION")).setName("COPY_MODIFIER").setSimplificationFunctionContentIndex(1).addTags("cspn:Item Modifier")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            ItemHolder to = (ItemHolder) d[0];
+                                        group(literal("copy"), ITEM_HOLDER, optional(sameLine(), resourceLocationFixer, productions.getOrCreateStructure("RESOURCE_LOCATION")).setName("COPY_MODIFIER").setSimplificationFunctionContentIndex(1).addTags("cspn:Item Modifier")).setEvaluator((p, d) -> {
+                                            ISymbolContext ctx = (ISymbolContext) d[0];
+                                            ItemHolder to = (ItemHolder) d[1];
 
-                                            ItemHolder from = (ItemHolder) p.find("ITEM_HOLDER").evaluate(ctx, null);
+                                            ItemHolder from = (ItemHolder) p.find("ITEM_HOLDER").evaluate(ctx);
 
-                                            ResourceLocation modifierId = (ResourceLocation) p.findThenEvaluate("COPY_MODIFIER", null, ctx, null);
+                                            ResourceLocation modifierId = (ResourceLocation) p.findThenEvaluate("COPY_MODIFIER", null, ctx);
                                             ItemModifier modifier = modifierId != null ? new ItemModifier(ctx.get(SetupModuleTask.INSTANCE).getNamespace(modifierId.namespace), modifierId.body) : null;
 
                                             try {
@@ -74,11 +77,12 @@ public class ItemCommandDefinition implements SimpleCommandDefinition {
                                                 throw new PrismarineException(PrismarineException.Type.IMPOSSIBLE, "Impossible code reached", p, ctx);
                                             }
                                         }).setName("ITEM_COPY_COMMAND"),
-                                        group(literal("replace"), productions.getOrCreateStructure("ITEM"), TridentProductions.integer(productions).setOptional().setName("COUNT").addTags("cspn:Count")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            ItemHolder target = (ItemHolder) d[0];
+                                        group(literal("replace"), productions.getOrCreateStructure("ITEM"), TridentProductions.integer(productions).setOptional().setName("COUNT").addTags("cspn:Count")).setEvaluator((p, d) -> {
+                                            ISymbolContext ctx = (ISymbolContext) d[0];
+                                            ItemHolder target = (ItemHolder) d[1];
 
-                                            Item item = (Item) p.find("ITEM").evaluate(ctx, new Object[] {NBTMode.SETTING, false});
-                                            int count = (int) p.findThenEvaluate("COUNT", 1, ctx, null);
+                                            Item item = (Item) p.find("ITEM").evaluate(ctx, NBTMode.SETTING, false);
+                                            int count = (int) p.findThenEvaluate("COUNT", 1, ctx);
 
                                             try {
                                                 return new ItemReplaceCommand(target, item, count);
@@ -91,10 +95,11 @@ public class ItemCommandDefinition implements SimpleCommandDefinition {
                                                 throw new PrismarineException(PrismarineException.Type.IMPOSSIBLE, "Impossible code reached", p, ctx);
                                             }
                                         }).setName("ITEM_REPLACE_COMMAND"),
-                                        group(literal("modify"), productions.getOrCreateStructure("RESOURCE_LOCATION")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            ItemHolder target = (ItemHolder) d[0];
+                                        group(literal("modify"), productions.getOrCreateStructure("RESOURCE_LOCATION")).setEvaluator((p, d) -> {
+                                            ISymbolContext ctx = (ISymbolContext) d[0];
+                                            ItemHolder target = (ItemHolder) d[1];
 
-                                            ResourceLocation id = (ResourceLocation) p.find("RESOURCE_LOCATION").evaluate(ctx, null);
+                                            ResourceLocation id = (ResourceLocation) p.find("RESOURCE_LOCATION").evaluate(ctx);
                                             ItemModifier ref = new ItemModifier(ctx.get(SetupModuleTask.INSTANCE).getNamespace(id.namespace), id.body);
 
                                             try {
@@ -108,20 +113,20 @@ public class ItemCommandDefinition implements SimpleCommandDefinition {
                                         }).setName("ITEM_MODIFY_COMMAND")
                                 ).setName("SUBCOMMAND")
                         ).setSimplificationFunction(d -> {
-                            TokenPattern<?> pattern = d.pattern;
-                            ISymbolContext ctx = (ISymbolContext) d.ctx;
+                            ISymbolContext ctx = (ISymbolContext) d.data[0];
 
-                            d.unlock(); d = null;
-                            ItemHolder holder = (ItemHolder) pattern.find("ITEM_HOLDER").evaluate(ctx, null);
+                            ItemHolder holder = (ItemHolder) d.pattern.find("ITEM_HOLDER").evaluate(ctx);
 
-                            TokenPattern.SimplificationDomain.get(pattern.find("SUBCOMMAND"), ctx, new Object[] {holder});
+                            d.pattern = d.pattern.find("SUBCOMMAND");
+                            d.data = new Object[] {ctx, holder};
                         }).setName("OLD_ITEM_SYNTAX"),
                         group(
                                 literal("modify"), ITEM_HOLDER, resourceLocationFixer, productions.getOrCreateStructure("RESOURCE_LOCATION")
-                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                            ItemHolder target = (ItemHolder) p.find("ITEM_HOLDER").evaluate(ctx, null);
+                        ).setEvaluator((p, d) -> {
+                            ISymbolContext ctx = (ISymbolContext) d[0];
+                            ItemHolder target = (ItemHolder) p.find("ITEM_HOLDER").evaluate(ctx);
 
-                            ResourceLocation id = (ResourceLocation) p.find("RESOURCE_LOCATION").evaluate(ctx, null);
+                            ResourceLocation id = (ResourceLocation) p.find("RESOURCE_LOCATION").evaluate(ctx);
                             ItemModifier ref = new ItemModifier(ctx.get(SetupModuleTask.INSTANCE).getNamespace(id.namespace), id.body);
 
                             try {
@@ -135,11 +140,12 @@ public class ItemCommandDefinition implements SimpleCommandDefinition {
                         }).setName("NEW_ITEM_MODIFY"),
                         group(
                                 literal("replace"), ITEM_HOLDER, choice(
-                                        group(literal("with"), productions.getOrCreateStructure("ITEM"), TridentProductions.integer(productions).setOptional().setName("COUNT").addTags("cspn:Count")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            ItemHolder target = (ItemHolder) d[0];
+                                        group(literal("with"), productions.getOrCreateStructure("ITEM"), TridentProductions.integer(productions).setOptional().setName("COUNT").addTags("cspn:Count")).setEvaluator((p, d) -> {
+                                            ISymbolContext ctx = (ISymbolContext) d[0];
+                                            ItemHolder target = (ItemHolder) d[1];
 
-                                            Item item = (Item) p.find("ITEM").evaluate(ctx, new Object[] {NBTMode.SETTING, false});
-                                            int count = (int) p.findThenEvaluate("COUNT", 1, ctx, null);
+                                            Item item = (Item) p.find("ITEM").evaluate(ctx, NBTMode.SETTING, false);
+                                            int count = (int) p.findThenEvaluate("COUNT", 1, ctx);
 
                                             try {
                                                 return new ItemReplaceCommand(target, item, count);
@@ -152,12 +158,13 @@ public class ItemCommandDefinition implements SimpleCommandDefinition {
                                                 throw new PrismarineException(PrismarineException.Type.IMPOSSIBLE, "Impossible code reached", p, ctx);
                                             }
                                         }).setName("ITEM_REPLACE_WITH_COMMAND"),
-                                        group(literal("from"), ITEM_HOLDER, optional(sameLine(), resourceLocationFixer, productions.getOrCreateStructure("RESOURCE_LOCATION")).setSimplificationFunctionContentIndex(1).setName("COPY_MODIFIER")).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            ItemHolder to = (ItemHolder) d[0];
+                                        group(literal("from"), ITEM_HOLDER, optional(sameLine(), resourceLocationFixer, productions.getOrCreateStructure("RESOURCE_LOCATION")).setSimplificationFunctionContentIndex(1).setName("COPY_MODIFIER")).setEvaluator((p, d) -> {
+                                            ISymbolContext ctx = (ISymbolContext) d[0];
+                                            ItemHolder to = (ItemHolder) d[1];
 
-                                            ItemHolder from = (ItemHolder) p.find("ITEM_HOLDER").evaluate(ctx, null);
+                                            ItemHolder from = (ItemHolder) p.find("ITEM_HOLDER").evaluate(ctx);
 
-                                            ResourceLocation modifierId = (ResourceLocation) p.findThenEvaluate("COPY_MODIFIER", null, ctx, null);
+                                            ResourceLocation modifierId = (ResourceLocation) p.findThenEvaluate("COPY_MODIFIER", null, ctx);
                                             ItemModifier modifier = modifierId != null ? new ItemModifier(ctx.get(SetupModuleTask.INSTANCE).getNamespace(modifierId.namespace), modifierId.body) : null;
 
                                             try {
@@ -171,13 +178,12 @@ public class ItemCommandDefinition implements SimpleCommandDefinition {
                                         }).setName("ITEM_REPLACE_FROM_COMMAND")
                                 ).setName("SUBCOMMAND")
                         ).setSimplificationFunction(d -> {
-                            TokenPattern<?> pattern = d.pattern;
-                            ISymbolContext ctx = (ISymbolContext) d.ctx;
+                            ISymbolContext ctx = (ISymbolContext) d.data[0];
 
-                            d.unlock(); d = null;
-                            ItemHolder holder = (ItemHolder) pattern.find("ITEM_HOLDER").evaluate(ctx, null);
+                            ItemHolder holder = (ItemHolder) d.pattern.find("ITEM_HOLDER").evaluate(ctx);
 
-                            TokenPattern.SimplificationDomain.get(pattern.find("SUBCOMMAND"), ctx, new Object[] {holder});
+                            d.pattern = d.pattern.find("SUBCOMMAND");
+                            d.data = new Object[] {ctx, holder};
                         }).setName("NEW_ITEM_REPLACE")
                 ).setName("SUBCOMMAND")
             ).setSimplificationFunctionContentIndex(1)

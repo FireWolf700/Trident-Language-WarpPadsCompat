@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashSet;
 
 public class TridentSuiteConfiguration extends PrismarineSuiteConfiguration {
@@ -308,69 +307,59 @@ public class TridentSuiteConfiguration extends PrismarineSuiteConfiguration {
 
         TridentBuildConfiguration buildConfig = compiler.getWorker().output.get(SetupBuildConfigTask.INSTANCE);
         CommandModule module = compiler.getWorker().output.get(SetupModuleTask.INSTANCE);
-        int numThreads = Trident.NUM_IO_THREADS;
 
         HashSet<String> dataPackSubFolderNames = new HashSet<>();
         HashSet<String> resourcePackSubFolderNames = new HashSet<>();
-        HashSet<File> filesToKeep = new HashSet<>();
 
         if(buildConfig.dataPackOutput != null) {
-            File bpOut = buildConfig.dataPackOutput;
-            for(Exportable exportable : module.getAllExportables()) {
-                if(exportable.shouldExport() && exportable.getExportPath() != null) {
-                    String firstName = exportable.getExportPath();
-                    if(firstName.contains("/")) firstName = firstName.substring(0, firstName.indexOf("/"));
-                    dataPackSubFolderNames.add(firstName);
-                    if(buildConfig.cleanDataPackOutput) {
-                        filesToKeep.add(bpOut.toPath().resolve(Paths.get(exportable.getExportPath())).toFile());
+            try {
+                File bpOut = buildConfig.dataPackOutput;
+                for(Exportable exportable : module.getAllExportables()) {
+                    if(exportable.shouldExport() && exportable.getExportPath() != null) {
+                        String firstName = exportable.getExportPath();
+                        if(firstName.contains("/")) firstName = firstName.substring(0, firstName.indexOf("/"));
+                        dataPackSubFolderNames.add(firstName);
                     }
                 }
-            }
-            if(buildConfig.cleanDataPackOutput) {
-                for(String subFolder : dataPackSubFolderNames) {
-                    FileUtil.recursivelyDelete(bpOut.toPath().resolve(subFolder).toFile(), filesToKeep);
+                if(buildConfig.cleanDataPackOutput) {
+                    for(String subFolder : dataPackSubFolderNames) {
+                        Debug.log("Clearing folder: " + subFolder);
+                        FileUtil.recursivelyDelete(bpOut.toPath().resolve(subFolder).toFile());
+                    }
                 }
-            }
-            ArrayList<IOException> exceptions = module.compile(bpOut, numThreads);
-            for(IOException x : exceptions) {
+                module.compile(bpOut);
+            } catch(IOException x) {
                 compiler.logException(x, "Error while generating output data pack: ");
             }
         } else {
             compiler.getReport().addNotice(new Notice(NoticeType.ERROR, "Data pack output directory not specified"));
         }
-        filesToKeep.clear();
 
         ResourcePackGenerator resourcePack = compiler.getWorker().output.get(SetupResourcePackTask.INSTANCE);
 
         compiler.updateProgress(0);
         compiler.setProgress("Generating resource pack");
-        if(resourcePack != null) {
-            if(buildConfig.cleanResourcePackOutput) {
-                File resourceOut = buildConfig.resourcePackOutput;
-                resourcePackSubFolderNames.add("assets");
-                for(Exportable exportable : resourcePack.getAllExportables()) {
-                    if(exportable.shouldExport() && exportable.getExportPath() != null) {
-                        String firstName = exportable.getExportPath();
-                        if(firstName.contains("/")) firstName = firstName.substring(0, firstName.indexOf("/"));
-                        resourcePackSubFolderNames.add(firstName);
-                        if(buildConfig.cleanResourcePackOutput) {
-                            filesToKeep.add(resourceOut.toPath().resolve(Paths.get(exportable.getExportPath())).toFile());
+        try {
+            if(resourcePack != null) {
+                if(buildConfig.cleanResourcePackOutput) {
+                    File resourceOut = buildConfig.resourcePackOutput;
+                    resourcePackSubFolderNames.add("assets");
+                    for(Exportable exportable : resourcePack.getAllExportables()) {
+                        if(exportable.shouldExport() && exportable.getExportPath() != null) {
+                            String firstName = exportable.getExportPath();
+                            if(firstName.contains("/")) firstName = firstName.substring(0, firstName.indexOf("/"));
+                            resourcePackSubFolderNames.add(firstName);
                         }
                     }
+                    for(String subFolder : resourcePackSubFolderNames) {
+                        FileUtil.recursivelyDelete(resourceOut.toPath().resolve(subFolder).toFile());
+                    }
                 }
-                for(String subFolder : resourcePackSubFolderNames) {
-                    FileUtil.recursivelyDelete(resourceOut.toPath().resolve(subFolder).toFile(), filesToKeep);
-                }
+                resourcePack.generate();
             }
-            ArrayList<IOException> exceptions = resourcePack.generate(numThreads);
-            for(IOException x : exceptions) {
-                compiler.logException(x, "Error while generating output resource pack: ");
-            }
+        } catch(IOException x) {
+            compiler.logException(x, "Error while generating output resource pack: ");
         }
-        filesToKeep.clear();
-
-        compiler.getWorker().output.put(SetupResourcePackTask.INSTANCE, null);
-        compiler.getWorker().output.put(SetupModuleTask.INSTANCE, null);
     }
 
     @Override

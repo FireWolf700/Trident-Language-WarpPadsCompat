@@ -19,7 +19,7 @@ import com.energyxxer.trident.compiler.TridentProductions;
 
 import static com.energyxxer.prismarine.PrismarineProductions.*;
 
-public class AdvancementArgumentParser implements PatternSwitchProviderUnit<ISymbolContext> {
+public class AdvancementArgumentParser implements PatternSwitchProviderUnit {
     @Override
     public String[] getSwitchKeys() {
         return new String[] {"advancements"};
@@ -34,8 +34,8 @@ public class AdvancementArgumentParser implements PatternSwitchProviderUnit<ISym
                                 wrapper(productions.getOrCreateStructure("RESOURCE_LOCATION")).setName("ADVANCEMENT_ENTRY_KEY"),
                                 TridentProductions.equals(),
                                 choice(
-                                        wrapper(TridentProductions.rawBoolean(), (Object v, TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                            String advancementName = (String) d[0];
+                                        wrapper(TridentProductions.rawBoolean(), (v, p, d) -> {
+                                            String advancementName = (String) d[1];
                                             return new AdvancementCompletionEntry(advancementName, (boolean) v);
                                         }),
                                         group(
@@ -45,40 +45,41 @@ public class AdvancementArgumentParser implements PatternSwitchProviderUnit<ISym
                                                                 wrapper(TridentProductions.identifierA(productions)).setName("CRITERION_NAME"),
                                                                 TridentProductions.equals(),
                                                                 wrapper(TridentProductions.rawBoolean()).addTags(SuggestionTags.ENABLED).setName("CRITERION_ATTAINED")
-                                                        ).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                                            String criterionName = (String) p.find("CRITERION_NAME").evaluate(ctx, null);
-                                                            boolean attained = (boolean) p.find("CRITERION_ATTAINED").evaluate(ctx, null);
+                                                        ).setEvaluator((p, d) -> {
+                                                            ISymbolContext ctx = (ISymbolContext) d[0];
+                                                            String criterionName = (String) p.find("CRITERION_NAME").evaluate(ctx);
+                                                            boolean attained = (boolean) p.find("CRITERION_ATTAINED").evaluate(ctx);
                                                             return new AdvancementCriterionEntry(criterionName, attained);
                                                         }),
                                                         TridentProductions.comma()
-                                                ).setOptional().setName("CRITERION_LIST").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
-                                                    AdvancementCriterionGroupEntry group = new AdvancementCriterionGroupEntry((String) d[0]);
+                                                ).setOptional().setName("CRITERION_LIST").setEvaluator((p, d) -> {
+                                                    ISymbolContext ctx = (ISymbolContext) d[0];
+                                                    AdvancementCriterionGroupEntry group = new AdvancementCriterionGroupEntry((String) d[1]);
 
                                                     for(TokenPattern<?> rawEntry : ((TokenList) p).getContentsExcludingSeparators()) {
-                                                        group.addCriterion((AdvancementCriterionEntry) rawEntry.evaluate(ctx, null));
+                                                        group.addCriterion((AdvancementCriterionEntry) rawEntry.evaluate(ctx));
                                                     }
                                                     return group;
                                                 }),
                                                 TridentProductions.brace("}")
                                         ).setName("CRITERION_GROUP").setSimplificationFunction(d -> {
                                             d.pattern = d.pattern.tryFind("CRITERION_LIST");
-                                        }).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new AdvancementCriterionGroupEntry((String) d[0]))
+                                        }).setEvaluator((p, d) -> new AdvancementCriterionGroupEntry((String) d[1]))
                                 ).setName("ADVANCEMENT_ENTRY_VALUE")
                         ).setName("ADVANCEMENT_ENTRY").setSimplificationFunction(d -> {
-                            ISymbolContext ctx = (ISymbolContext) d.ctx;
-                            TokenPattern<?> pattern = d.pattern;
-                            d.unlock(); d = null;
+                            ISymbolContext ctx = (ISymbolContext) d.data[0];
+                            String advancementName = ((ResourceLocation) d.pattern.find("ADVANCEMENT_ENTRY_KEY").evaluate(ctx)).toString();
 
-                            String advancementName = ((ResourceLocation) pattern.find("ADVANCEMENT_ENTRY_KEY").evaluate(ctx, null)).toString();
-
-                            TokenPattern.SimplificationDomain.get(pattern.find("ADVANCEMENT_ENTRY_VALUE"), ctx, new Object[] {advancementName});
+                            d.pattern = d.pattern.find("ADVANCEMENT_ENTRY_VALUE");
+                            d.data = new Object[] {ctx, advancementName};
                         }),
                         TridentProductions.comma()
-                ).setOptional().setName("ADVANCEMENT_LIST").setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> {
+                ).setOptional().setName("ADVANCEMENT_LIST").setEvaluator((p, d) -> {
+                    ISymbolContext ctx = (ISymbolContext) d[0];
                     AdvancementArgument advancements = new AdvancementArgument();
 
                     for(TokenPattern<?> rawArg : ((TokenList) p).getContentsExcludingSeparators()) {
-                        advancements.addEntry((AdvancementArgumentEntry) rawArg.evaluate(ctx, null));
+                        advancements.addEntry((AdvancementArgumentEntry) rawArg.evaluate(ctx));
                     }
 
                     return advancements;
@@ -87,7 +88,7 @@ public class AdvancementArgumentParser implements PatternSwitchProviderUnit<ISym
         ).setName("ADVANCEMENT_ARGUMENT_BLOCK").setSimplificationFunction(d -> {
             d.pattern = d.pattern.tryFind("ADVANCEMENT_LIST"); //will not simplify if the list does not exist, and
             // thus will execute the following evaluator
-        }).setEvaluator((TokenPattern<?> p, ISymbolContext ctx, Object[] d) -> new AdvancementArgument());
+        }).setEvaluator((p, d) -> new AdvancementArgument());
 
         return group(
                 literal("advancements").setName("SELECTOR_ARGUMENT_KEY"),
@@ -106,7 +107,7 @@ public class AdvancementArgumentParser implements PatternSwitchProviderUnit<ISym
         if(criterionList != null) {
             for(TokenPattern<?> rawArg : criterionList.getContents()) {
                 if(rawArg.getName().equals("CRITERION_ENTRY")) {
-                    String criterionName = (String) rawArg.find("CRITERION_NAME.IDENTIFIER_A").evaluate(ctx, null);
+                    String criterionName = (String) rawArg.find("CRITERION_NAME.IDENTIFIER_A").evaluate(ctx);
                     boolean value = rawArg.find("BOOLEAN").flatten(false).equals("true");
                     criteria.addCriteria(new AdvancementCriterionEntry(criterionName, value));
                 }
